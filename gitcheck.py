@@ -36,6 +36,7 @@ def searchRepositories():
 
 # Check state of a git repository
 def checkRepository(rep, verbose=False):
+    aitem = []
     mitem = []
     ditem = []
     curdir = os.path.abspath(os.getcwd())
@@ -52,11 +53,16 @@ def checkRepository(rep, verbose=False):
             state = m.group(1)
             if state == 'M':
                 mitem.append(m.group(2))
+            if state == 'A':
+                aitem.append(m.group(2))
+            if state == 'D':
+                ditem.append(m.group(2))
 
     # Check if they have modifications
+    acount = len(aitem)
     mcount = len(mitem)
     dcount = len(ditem)
-    change = not (mcount == 0 and dcount == 0)
+    change = not (acount == 0 and mcount == 0 and dcount == 0)
     if not change:
         color = tcolor.DEFAULT + tcolor.GREEN
     else:
@@ -65,7 +71,7 @@ def checkRepository(rep, verbose=False):
     # Print result
     prjname = "%s %s %s" % (color, rep, tcolor.DEFAULT)
     if change:
-        countstr = "[%sModifify:%s%s / %sDelete:%s%s]" % (tcolor.BLUE, tcolor.DEFAULT, mcount, tcolor.BLUE, tcolor.DEFAULT, dcount)
+        countstr = "[%sModifify:%s%s / %sAdd:%s%s / %sDelete:%s%s]" % (tcolor.BLUE, tcolor.DEFAULT, mcount, tcolor.BLUE, tcolor.DEFAULT, acount, tcolor.BLUE, tcolor.DEFAULT, dcount)
     else:
         countstr = ""
     print ("%s %s" % (prjname, countstr))
@@ -73,6 +79,12 @@ def checkRepository(rep, verbose=False):
     if verbose:
         for m in mitem:
             filename = "  |--%s%s%s" % (tcolor.ORANGE, m, tcolor.DEFAULT)
+            print (filename)
+        for a in aitem:
+            filename = "  |--%s%s%s(+)" % (tcolor.ORANGE, a, tcolor.DEFAULT)
+            print (filename)
+        for d in ditem:
+            filename = "  |--%s%s%s(-)" % (tcolor.ORANGE, d, tcolor.DEFAULT)
             print (filename)
 
 
