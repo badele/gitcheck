@@ -43,8 +43,9 @@ def checkRepository(rep, verbose=False):
     curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    gitstatus = sysexec("cd %s/%s ; git status -s | grep -v '??'"
-                        % (curdir, rep ))
+    gitstatus = sysexec("cd %(curdir)s/%(rep)s ; git status -s | grep -v '??'"
+                        % locals())
+    branch = getDefaultBranch(rep)
 
     # Analyse git status log
     lines = gitstatus.split('\n')
@@ -70,21 +71,32 @@ def checkRepository(rep, verbose=False):
         color = tcolor.BOLD + tcolor.RED
 
     # Print result
-    prjname = "%s %s %s" % (color, rep, tcolor.DEFAULT)
+    prjname = "%s%s%s" % (color, rep, tcolor.DEFAULT)
     if change:
-        countstr = "[%sModifify:%s%s / %sAdd:%s%s / %sDelete:%s%s]" % (
-            tcolor.BLUE,
-            tcolor.DEFAULT,
-            mcount, tcolor.BLUE,
-            tcolor.DEFAULT,
-            acount,
-            tcolor.BLUE,
-            tcolor.DEFAULT,
-            dcount
-        )
+        countstr = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
+        if mcount > 0:
+            countstr += "%sModifify:%s%s" % (
+                tcolor.BLUE,
+                tcolor.DEFAULT,
+                mcount
+            )
+        if acount > 0:
+            countstr += " / %sAdd:%s%s" % (
+                tcolor.BLUE,
+                tcolor.DEFAULT,
+                acount
+            )
+        if dcount > 0:
+            countstr += " / %sDelete:%s%s" % (
+                tcolor.BLUE,
+                tcolor.DEFAULT,
+                dcount
+            )
+        countstr += "]"
     else:
         countstr = ""
-    print("%s %s" % (prjname, countstr))
+
+    print("%(prjname)s/%(branch)s %(countstr)s" % locals())
 
     if verbose:
         for m in mitem:
@@ -96,6 +108,21 @@ def checkRepository(rep, verbose=False):
         for d in ditem:
             filename = "  |--%s%s%s(-)" % (tcolor.ORANGE, d, tcolor.DEFAULT)
             print(filename)
+
+
+# Get Default branch for repository
+def getDefaultBranch(rep):
+    curdir = os.path.abspath(os.getcwd())
+    sbranch = re.compile(r'^\* (.*)')
+    gitbranch = sysexec("cd %(curdir)s/%(rep)s ; git branch | grep '*'"
+                        % locals())
+
+    branch = ""
+    m = sbranch.match(gitbranch)
+    if m:
+        branch = m.group(1)
+
+    return branch
 
 
 # Check all git repositories
