@@ -79,7 +79,7 @@ def checkRepository(rep, verbose=False):
             countstr += "%sTo commit:%s%s" % (
                 tcolor.BLUE,
                 tcolor.DEFAULT,
-                getLocalNbChange(rep)
+                len(getLocalFilesChange(rep))
             )
 
         # if mcount > 0:
@@ -108,7 +108,7 @@ def checkRepository(rep, verbose=False):
     if branch != "":
         remotes = getRemoteRepositories(rep)
         for r in remotes:
-            count = getRemoteNbChange(rep, r, branch)
+            count = len(getLocalToPush(rep, r, branch))
             if count > 0:
                 countstr += " %s%s%s[%sTo Push:%s%s]" % (
                     tcolor.ORANGE,
@@ -133,29 +133,27 @@ def checkRepository(rep, verbose=False):
             print(filename)
 
 
-def getLocalNbChange(rep):
+def getLocalFilesChange(rep):
+    files = []
     curdir = os.path.abspath(os.getcwd())
-    snbchange = re.compile(r'(^[0-9]+)')
-    result = sysexec("cd %(curdir)s/%(rep)s ; git status -suno | wc -l"
+    snbchange = re.compile(r'^(.{2}) (.*)')
+    result = sysexec("cd %(curdir)s/%(rep)s ; git status -suno"
                      % locals())
 
-    m = snbchange.match(result)
-    if m:
-        return m.group(1)
+    lines = result.split('\n')
+    for l in lines:
+        m = snbchange.match(l)
+        if m:
+            files.append([m.group(1), m.group(2)])
 
-    return 0
+    return files
 
 
-def getRemoteNbChange(rep, remote, branch):
-    snbchange = re.compile(r'(^[0-9]+)')
-    result = gitExec(rep, "git log %(remote)s/%(branch)s..HEAD --oneline | wc -l"
+def getLocalToPush(rep, remote, branch):
+    result = gitExec(rep, "git log %(remote)s/%(branch)s..HEAD --oneline"
                      % locals())
 
-    m = snbchange.match(result)
-    if m:
-        return int(m.group(1))
-
-    return 0
+    return [x for x in result.split('\n') if x]
 
 
 # Get Default branch for repository
@@ -174,15 +172,10 @@ def getDefaultBranch(rep):
 
 
 def getRemoteRepositories(rep):
-    remotes = []
     result = gitExec(rep, "git remote"
                      % locals())
 
-    lines = result.split('\n')
-    for l in lines:
-        if l != "":
-            remotes.append(l)
-
+    remotes = [x for x in result.split('\n') if x]
     return remotes
 
 
