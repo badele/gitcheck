@@ -7,6 +7,7 @@ import sys
 import getopt
 import fnmatch
 
+
 # Class for terminal Color
 class tcolor:
     DEFAULT = "\033[0m"
@@ -71,26 +72,34 @@ def checkRepository(rep, verbose=False):
     # Print result
     prjname = "%s %s %s" % (color, rep, tcolor.DEFAULT)
     if change:
-        countstr = "[%sModifify:%s%s / %sAdd:%s%s / %sDelete:%s%s]" % (tcolor.BLUE, tcolor.DEFAULT, mcount, tcolor.BLUE, tcolor.DEFAULT, acount, tcolor.BLUE, tcolor.DEFAULT, dcount)
+        countstr = "[%sModifify:%s%s / %sAdd:%s%s / %sDelete:%s%s]" % (
+            tcolor.BLUE,
+            tcolor.DEFAULT,
+            mcount, tcolor.BLUE,
+            tcolor.DEFAULT,
+            acount,
+            tcolor.BLUE,
+            tcolor.DEFAULT,
+            dcount
+        )
     else:
         countstr = ""
-    print ("%s %s" % (prjname, countstr))
+    print("%s %s" % (prjname, countstr))
 
     if verbose:
         for m in mitem:
             filename = "  |--%s%s%s" % (tcolor.ORANGE, m, tcolor.DEFAULT)
-            print (filename)
+            print(filename)
         for a in aitem:
             filename = "  |--%s%s%s(+)" % (tcolor.ORANGE, a, tcolor.DEFAULT)
-            print (filename)
+            print(filename)
         for d in ditem:
             filename = "  |--%s%s%s(-)" % (tcolor.ORANGE, d, tcolor.DEFAULT)
-            print (filename)
+            print(filename)
 
 
 # Check all git repositories
 def gitcheck(verbose):
-    curdir = os.path.abspath(os.getcwd())
     repo = searchRepositories()
     for r in repo:
         checkRepository(r, verbose)
