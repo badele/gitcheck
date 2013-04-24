@@ -43,63 +43,25 @@ def checkRepository(rep, verbose=False):
     curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    gitstatus = gitExec(rep, "git status -suno | grep -v '??'"
-                        % locals())
     branch = getDefaultBranch(rep)
+    changes = getLocalFilesChange(rep)
+    ischange = len(changes) > 0
 
-    # Analyse git status log
-    lines = gitstatus.split('\n')
-    for l in lines:
-        m = gsearch.match(l)
-        if m:
-            state = m.group(1)
-            if state == 'M':
-                mitem.append(m.group(2))
-            if state == 'A':
-                aitem.append(m.group(2))
-            if state == 'D':
-                ditem.append(m.group(2))
-
-    # Check if they have modifications
-    acount = len(aitem)
-    mcount = len(mitem)
-    dcount = len(ditem)
-    tcount = acount + mcount + dcount
-    change = not (acount == 0 and mcount == 0 and dcount == 0)
-    if not change:
-        color = tcolor.DEFAULT + tcolor.GREEN
-    else:
+    if ischange:
         color = tcolor.BOLD + tcolor.RED
+    else:
+        color = tcolor.DEFAULT + tcolor.GREEN
 
     # Print result
     prjname = "%s%s%s" % (color, rep, tcolor.DEFAULT)
-    if change:
+    if ischange:
         countstr = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
-        if tcount > 0:
-            countstr += "%sTo commit:%s%s" % (
-                tcolor.BLUE,
-                tcolor.DEFAULT,
-                len(getLocalFilesChange(rep))
-            )
+        countstr += "%sTo Commit:%s%s" % (
+            tcolor.BLUE,
+            tcolor.DEFAULT,
+            len(getLocalFilesChange(rep))
+        )
 
-        # if mcount > 0:
-        #     countstr += "%sModifify:%s%s" % (
-        #         tcolor.BLUE,
-        #         tcolor.DEFAULT,
-        #         mcount
-        #     )
-        # if acount > 0:
-        #     countstr += " / %sAdd:%s%s" % (
-        #         tcolor.BLUE,
-        #         tcolor.DEFAULT,
-        #         acount
-        #     )
-        # if dcount > 0:
-        #     countstr += " / %sDelete:%s%s" % (
-        #         tcolor.BLUE,
-        #         tcolor.DEFAULT,
-        #         dcount
-        #     )
         countstr += "]"
     else:
         countstr = ""
@@ -120,17 +82,24 @@ def checkRepository(rep, verbose=False):
                 )
 
     print("%(prjname)s/%(branch)s %(countstr)s" % locals())
-
     if verbose:
-        for m in mitem:
-            filename = "  |--%s%s%s" % (tcolor.ORANGE, m, tcolor.DEFAULT)
+        if ischange > 0:
+            filename = "  |--Local"
             print(filename)
-        for a in aitem:
-            filename = "  |--%s%s%s(+)" % (tcolor.ORANGE, a, tcolor.DEFAULT)
-            print(filename)
-        for d in ditem:
-            filename = "  |--%s%s%s(-)" % (tcolor.ORANGE, d, tcolor.DEFAULT)
-            print(filename)
+            for c in changes:
+                filename = "     |--%s%s%s" % (tcolor.ORANGE, c[1], tcolor.DEFAULT)
+                print(filename)
+
+        if branch != "":
+            remotes = getRemoteRepositories(rep)
+            for r in remotes:
+                commits = getLocalToPush(rep, r, branch)
+                if len(commits) > 0:
+                    rname = "  |--%(r)s" % locals()
+                    print(rname)
+                    for commit in commits:
+                        commit = "     |--%s%s%s" % (tcolor.BLUE, commit, tcolor.DEFAULT)
+                        print(commit)
 
 
 def getLocalFilesChange(rep):
