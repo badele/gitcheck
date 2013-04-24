@@ -62,3 +62,6 @@ blog.cendreo.com
 memorykey  
 ```
 ![Gitcheck verbose](http://bruno.adele.im/static/gitcheck_verbose.png)
+
+### French version
+http://bruno.adele.im/projets/gitcheck/
