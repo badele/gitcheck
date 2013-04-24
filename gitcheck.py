@@ -43,7 +43,7 @@ def checkRepository(rep, verbose=False):
     curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    gitstatus = sysexec("cd %(curdir)s/%(rep)s ; git status -suno | grep -v '??'"
+    gitstatus = gitExec(rep, "git status -suno | grep -v '??'"
                         % locals())
     branch = getDefaultBranch(rep)
 
@@ -137,7 +137,7 @@ def getLocalFilesChange(rep):
     files = []
     curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
-    result = sysexec("cd %(curdir)s/%(rep)s ; git status -suno"
+    result = gitExec(rep, "git status -suno"
                      % locals())
 
     lines = result.split('\n')
@@ -160,7 +160,7 @@ def getLocalToPush(rep, remote, branch):
 def getDefaultBranch(rep):
     curdir = os.path.abspath(os.getcwd())
     sbranch = re.compile(r'^\* (.*)')
-    gitbranch = sysexec("cd %(curdir)s/%(rep)s ; git branch | grep '*'"
+    gitbranch = gitExec(rep, "git branch | grep '*'"
                         % locals())
 
     branch = ""
@@ -184,9 +184,8 @@ def gitExec(rep, command):
     curdir = os.path.abspath(os.getcwd())
     cmd = "cd %(curdir)s/%(rep)s ; %(command)s" % locals()
 
-    result = sysexec(cmd)
-
-    return result
+    cmd = os.popen(cmd)
+    return cmd.read()
 
 
 # Check all git repositories
@@ -194,11 +193,6 @@ def gitcheck(verbose):
     repo = searchRepositories()
     for r in repo:
         checkRepository(r, verbose)
-
-
-def sysexec(cmdLine):
-    cmd = os.popen(cmdLine)
-    return cmd.read()
 
 
 def main():
