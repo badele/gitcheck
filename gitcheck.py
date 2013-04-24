@@ -43,7 +43,7 @@ def checkRepository(rep, verbose=False):
     curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    gitstatus = sysexec("cd %(curdir)s/%(rep)s ; git status -s | grep -v '??'"
+    gitstatus = sysexec("cd %(curdir)s/%(rep)s ; git status -suno | grep -v '??'"
                         % locals())
     branch = getDefaultBranch(rep)
 
