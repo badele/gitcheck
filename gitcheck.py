@@ -18,7 +18,7 @@ class tcolor:
     ORANGE = "\033[93m"
 
 
-# Search all repositories from current directory
+# Search all local repositories from current directory
 def searchRepositories():
     curdir = os.path.abspath(os.getcwd())
 
@@ -36,43 +36,31 @@ def searchRepositories():
 
 
 # Check state of a git repository
-def checkRepository(rep, verbose=False):
+def checkRepository(rep, verbose=False, checkremote=False):
     aitem = []
     mitem = []
     ditem = []
     curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
+    if checkremote:
+        updateRemote(rep)
+
     branch = getDefaultBranch(rep)
     changes = getLocalFilesChange(rep)
     ischange = len(changes) > 0
 
-    if ischange:
-        color = tcolor.BOLD + tcolor.RED
-    else:
-        color = tcolor.DEFAULT + tcolor.GREEN
-
-    # Print result
-    prjname = "%s%s%s" % (color, rep, tcolor.DEFAULT)
-    if ischange:
-        countstr = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
-        countstr += "%sTo Commit:%s%s" % (
-            tcolor.BLUE,
-            tcolor.DEFAULT,
-            len(getLocalFilesChange(rep))
-        )
-
-        countstr += "]"
-    else:
-        countstr = ""
 
     branch = getDefaultBranch(rep)
+    topush = ""
+    topull = ""
     if branch != "":
         remotes = getRemoteRepositories(rep)
         for r in remotes:
             count = len(getLocalToPush(rep, r, branch))
+            ischange = ischange or (count > 0)
             if count > 0:
-                countstr += " %s%s%s[%sTo Push:%s%s]" % (
+                topush += " %s%s%s[%sTo Push:%s%s]" % (
                     tcolor.ORANGE,
                     r,
                     tcolor.DEFAULT,
@@ -81,7 +69,40 @@ def checkRepository(rep, verbose=False):
                     count
                 )
 
-    print("%(prjname)s/%(branch)s %(countstr)s" % locals())
+        if checkremote:
+            for r in remotes:
+                count = len(getRemoteToPull(rep, r, branch))
+                ischange = ischange or (count > 0)
+                if count > 0:
+                    topull += " %s%s%s[%sTo Pull:%s%s]" % (
+                        tcolor.ORANGE,
+                        r,
+                        tcolor.DEFAULT,
+                        tcolor.BLUE,
+                        tcolor.DEFAULT,
+                        count
+                    )
+
+    if ischange:
+        color = tcolor.BOLD + tcolor.RED
+    else:
+        color = tcolor.DEFAULT + tcolor.GREEN
+
+    # Print result
+    prjname = "%s%s%s" % (color, rep, tcolor.DEFAULT)
+    if len(changes) > 0:
+        strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
+        strlocal += "%sTo Commit:%s%s" % (
+            tcolor.BLUE,
+            tcolor.DEFAULT,
+            len(getLocalFilesChange(rep))
+        )
+
+        strlocal += "]"
+    else:
+        strlocal = ""
+
+    print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
     if verbose:
         if ischange > 0:
             filename = "  |--Local"
@@ -125,6 +146,17 @@ def getLocalToPush(rep, remote, branch):
     return [x for x in result.split('\n') if x]
 
 
+def getRemoteToPull(rep, remote, branch):
+    result = gitExec(rep, "git log HEAD..%(remote)s/%(branch)s --oneline"
+                     % locals())
+
+    return [x for x in result.split('\n') if x]
+
+
+def updateRemote(rep):
+    gitExec(rep, "git remote update")
+
+
 # Get Default branch for repository
 def getDefaultBranch(rep):
     curdir = os.path.abspath(os.getcwd())
@@ -158,27 +190,42 @@ def gitExec(rep, command):
 
 
 # Check all git repositories
-def gitcheck(verbose):
+def gitcheck(verbose, checkremote):
     repo = searchRepositories()
     for r in repo:
-        checkRepository(r, verbose)
+        checkRepository(r, verbose, checkremote)
+
+
+def usage():
+    print("Usage: %s [OPTIONS]" % (sys.argv[0]))
+    print("Check multiple git repository in one pass")
+    print("== Common options ==")
+    print("  -v, --verbose                 Show files & commits")
+    print("  -r, --remote                  also check remote")
 
 
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "v",
-            ["verbose", ])
+            "vhr",
+            ["verbose", "help", "remote", ])
     except getopt.GetoptError:
         sys.exit(2)
 
     verbose = False
+    checkremote = False
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
             verbose = True
+        if opt in ("-r", "--remote"):
+            checkremote = True
 
-    gitcheck(verbose)
+        if opt in ("-h", "--help"):
+            usage()
+            sys.exit(0)
+
+    gitcheck(verbose, checkremote)
 
 if __name__ == "__main__":
     main()
