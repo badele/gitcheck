@@ -2,12 +2,12 @@
 
 =========
 
-Tool to check your repository in a single pass. If you working in multiples projects, the gitcheck script scan recursive directory to find .git directory and analyse git repository status
+If you working in multiples projects, you want can be analyzed in a single pass of the changes in your projects. gitcheck is script who scan recursive directory to find a git directory and analyse all modifications.
 
 ## Examples utilizations
 
 ### Simple version
-This version show a summary of your git repositories, it print if you have a repository that have modified. For each lines, it print repository status and if modified, it print number files added and deleted.
+In simple version, it show for each repositories if you have modification not committed and or commits not pushed.
 
 ```bash
 >garchdeps.py
@@ -17,12 +17,12 @@ This version show a summary of your git repositories, it print if you have a rep
 
 
 ### Verbose version
-Substantially identical to the previous version, in bonus, it print who files modified
+Substantially identical to the previous version, in bonus, it print who files modified and commits not pushed
 
 ```bash
 >garchdeps.py -v 
 ```
 ![Gitcheck verbose](http://bruno.adele.im/static/gitcheck_verbose.png)
 
-### French version
+### French version is available here
 http://bruno.adele.im/projets/gitcheck/
