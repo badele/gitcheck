@@ -24,5 +24,14 @@ Substantially identical to the previous version, in bonus, it print who files mo
 ```
 ![Gitcheck verbose](http://bruno.adele.im/static/gitcheck_verbose.png)
 
+### Options
+
+```plaintext
+-v, --verbose                     Show files & commits
+-r, --remote                      also check with the remote
+-i <re>, --ignore-branch <re>     ignore branches matching the regex <re>
+```
+
+
 ### French version is available here
 http://bruno.adele.im/projets/gitcheck/

@@ -37,7 +37,7 @@ def searchRepositories():
 
 
 # Check state of a git repository
-def checkRepository(rep, verbose=False, checkremote=False):
+def checkRepository(rep, verbose=False, checkremote=False, ignoreBranch=r'^$'):
     aitem = []
     mitem = []
     ditem = []
@@ -48,6 +48,9 @@ def checkRepository(rep, verbose=False, checkremote=False):
         updateRemote(rep)
 
     branch = getDefaultBranch(rep)
+    if re.match(ignoreBranch, branch):
+        return
+
     changes = getLocalFilesChange(rep)
     ischange = len(changes) > 0
 
@@ -162,7 +165,15 @@ def getLocalFilesChange(rep):
     return files
 
 
+def hasRemoteBranch(rep, remote, branch):
+    result = gitExec(rep, "git branch -r | grep '%(remote)s/%(branch)s'"
+                     % locals())
+    return (result != "")
+
+
 def getLocalToPush(rep, remote, branch):
+    if not hasRemoteBranch(rep, remote, branch):
+        return []
     result = gitExec(rep, "git log %(remote)s/%(branch)s..HEAD --oneline"
                      % locals())
 
@@ -170,6 +181,8 @@ def getLocalToPush(rep, remote, branch):
 
 
 def getRemoteToPull(rep, remote, branch):
+    if not hasRemoteBranch(rep, remote, branch):
+        return []
     result = gitExec(rep, "git log HEAD..%(remote)s/%(branch)s --oneline"
                      % locals())
 
@@ -213,10 +226,10 @@ def gitExec(rep, command):
 
 
 # Check all git repositories
-def gitcheck(verbose, checkremote):
+def gitcheck(verbose, checkremote, ignoreBranch):
     repo = searchRepositories()
     for r in repo:
-        checkRepository(r, verbose, checkremote)
+        checkRepository(r, verbose, checkremote, ignoreBranch)
 
 
 def usage():
@@ -225,30 +238,36 @@ def usage():
     print("== Common options ==")
     print("  -v, --verbose                 Show files & commits")
     print("  -r, --remote                  force remote update(slow)")
+    print("  -i <re>, --ignore-branch <re> ignore branches matching the regex <re>")
 
 
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhr",
-            ["verbose", "help", "remote", ])
+            "vhri:",
+            ["verbose", "help", "remote", "ignore-branch:"])
     except getopt.GetoptError:
         sys.exit(2)
 
     verbose = False
     checkremote = False
+    ignoreBranch = r'^$'  # empty string
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
             verbose = True
         if opt in ("-r", "--remote"):
             checkremote = True
+        if opt in ("-r", "--remote"):
+            checkremote = True
+        if opt in ("-i", "--ignore-branch"):
+            ignoreBranch = arg
 
         if opt in ("-h", "--help"):
             usage()
             sys.exit(0)
 
-    gitcheck(verbose, checkremote)
+    gitcheck(verbose, checkremote, ignoreBranch)
 
 if __name__ == "__main__":
     main()
