@@ -16,6 +16,7 @@ class tcolor:
     GREEN = "\033[92m"
     BLUE = "\033[96m"
     ORANGE = "\033[93m"
+    MAGENTA = "\033[95m"
 
 
 # Search all local repositories from current directory
@@ -50,7 +51,6 @@ def checkRepository(rep, verbose=False, checkremote=False):
     changes = getLocalFilesChange(rep)
     ischange = len(changes) > 0
 
-
     branch = getDefaultBranch(rep)
     topush = ""
     topull = ""
@@ -69,19 +69,18 @@ def checkRepository(rep, verbose=False, checkremote=False):
                     count
                 )
 
-        if checkremote:
-            for r in remotes:
-                count = len(getRemoteToPull(rep, r, branch))
-                ischange = ischange or (count > 0)
-                if count > 0:
-                    topull += " %s%s%s[%sTo Pull:%s%s]" % (
-                        tcolor.ORANGE,
-                        r,
-                        tcolor.DEFAULT,
-                        tcolor.BLUE,
-                        tcolor.DEFAULT,
-                        count
-                    )
+        for r in remotes:
+            count = len(getRemoteToPull(rep, r, branch))
+            ischange = ischange or (count > 0)
+            if count > 0:
+                topull += " %s%s%s[%sTo Pull:%s%s]" % (
+                    tcolor.ORANGE,
+                    r,
+                    tcolor.DEFAULT,
+                    tcolor.BLUE,
+                    tcolor.DEFAULT,
+                    count
+                )
 
     if ischange:
         color = tcolor.BOLD + tcolor.RED
@@ -108,7 +107,10 @@ def checkRepository(rep, verbose=False, checkremote=False):
             filename = "  |--Local"
             print(filename)
             for c in changes:
-                filename = "     |--%s%s%s" % (tcolor.ORANGE, c[1], tcolor.DEFAULT)
+                filename = "     |--%s%s%s" % (
+                    tcolor.ORANGE,
+                    c[1],
+                    tcolor.DEFAULT)
                 print(filename)
 
         if branch != "":
@@ -119,7 +121,28 @@ def checkRepository(rep, verbose=False, checkremote=False):
                     rname = "  |--%(r)s" % locals()
                     print(rname)
                     for commit in commits:
-                        commit = "     |--%s%s%s" % (tcolor.BLUE, commit, tcolor.DEFAULT)
+                        commit = "     |--%s[To Push]%s %s%s%s" % (
+                            tcolor.MAGENTA,
+                            tcolor.DEFAULT,
+                            tcolor.BLUE,
+                            commit,
+                            tcolor.DEFAULT)
+                        print(commit)
+
+        if branch != "":
+            remotes = getRemoteRepositories(rep)
+            for r in remotes:
+                commits = getRemoteToPull(rep, r, branch)
+                if len(commits) > 0:
+                    rname = "  |--%(r)s" % locals()
+                    print(rname)
+                    for commit in commits:
+                        commit = "     |--%s[To Pull]%s %s%s%s" % (
+                            tcolor.MAGENTA,
+                            tcolor.DEFAULT,
+                            tcolor.BLUE,
+                            commit,
+                            tcolor.DEFAULT)
                         print(commit)
 
 
@@ -201,7 +224,7 @@ def usage():
     print("Check multiple git repository in one pass")
     print("== Common options ==")
     print("  -v, --verbose                 Show files & commits")
-    print("  -r, --remote                  also check remote")
+    print("  -r, --remote                  force remote update(slow)")
 
 
 def main():
