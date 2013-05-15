@@ -140,8 +140,14 @@ def getLocalFilesChange(rep):
 
     return files
 
+def hasRemoteBranch(rep, remote, branch):
+     result = gitExec(rep, "git branch -r | grep 'remotes/%(remote)s/%(branch)s'"
+                      % locals())
+     return (result != "")
 
 def getLocalToPush(rep, remote, branch):
+    if not hasRemoteBranch(rep, remote, branch):
+        return []
     result = gitExec(rep, "git log %(remote)s/%(branch)s..HEAD --oneline"
                      % locals())
 
@@ -149,6 +155,8 @@ def getLocalToPush(rep, remote, branch):
 
 
 def getRemoteToPull(rep, remote, branch):
+    if not hasRemoteBranch(rep, remote, branch):
+        return []
     result = gitExec(rep, "git log HEAD..%(remote)s/%(branch)s --oneline"
                      % locals())
 
