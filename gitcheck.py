@@ -141,7 +141,7 @@ def getLocalFilesChange(rep):
     return files
 
 def hasRemoteBranch(rep, remote, branch):
-     result = gitExec(rep, "git branch -r | grep 'remotes/%(remote)s/%(branch)s'"
+     result = gitExec(rep, "git branch -r | grep '%(remote)s/%(branch)s'"
                       % locals())
      return (result != "")
 
