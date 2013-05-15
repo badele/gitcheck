@@ -219,8 +219,8 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhri",
-            ["verbose", "help", "remote", "ignore-branch"])
+            "vhri:",
+            ["verbose", "help", "remote", "ignore-branch:"])
     except getopt.GetoptError:
         sys.exit(2)
 
