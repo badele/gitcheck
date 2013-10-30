@@ -234,7 +234,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
 
     if checkremote:
         for r in repo:
-            updateRemote(repo)
+            updateRemote(r)
 
     if shouldClear:
         print(tcolor.RESET)
