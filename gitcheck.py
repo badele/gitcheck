@@ -253,9 +253,8 @@ def usage():
     print("== Common options ==")
     print("  -v, --verbose                 Show files & commits")
     print("  -r, --remote                  force remote update(slow)")
-    print("  -w, --watch                   watch mode")
     print("  -b, --bell                    bell on action needed")
-    print("  -s <n>, --seconds <n>         interval for watch mode in seconds (default: 30s)")
+    print("  -w <sec>, --watch <sec>       after displaying, wait <sec> and run again")
     print("  -i <re>, --ignore-branch <re> ignore branches matching the regex <re>")
 
 
@@ -263,16 +262,15 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrwbs:i:",
-            ["verbose", "help", "remote", "watch", "bell", "seconds:", "ignore-branch:"])
+            "vhrbw:i:",
+            ["verbose", "help", "remote", "bell", "watch:", "ignore-branch:"])
     except getopt.GetoptError:
         sys.exit(2)
 
     verbose = False
     checkremote = False
-    watchMode = False
+    watchInterval = False
     bellOnActionNeeded = False
-    watchInterval = 30
     ignoreBranch = r'^$'  # empty string
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
@@ -281,22 +279,20 @@ def main():
             checkremote = True
         if opt in ("-r", "--remote"):
             checkremote = True
-        if opt in ("-w", "--watch"):
-            watchMode = True
         if opt in ("-b", "--bell"):
             bellOnActionNeeded = True
+        if opt in ("-w", "--watch"):
+            watchInterval = arg
         if opt in ("-i", "--ignore-branch"):
             ignoreBranch = arg
-        if opt in ("-s", "--seconds"):
-            watchInterval = arg
 
         if opt in ("-h", "--help"):
             usage()
             sys.exit(0)
 
     while True:
-        gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, watchMode)
-        if watchMode:
+        gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, watchInterval != False)
+        if watchInterval:
             time.sleep(float(watchInterval))
         else:
             break
