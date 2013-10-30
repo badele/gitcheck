@@ -29,6 +29,8 @@ Substantially identical to the previous version, in bonus, it print who files mo
 ```plaintext
 -v, --verbose                     Show files & commits
 -r, --remote                      also check with the remote
+-b, --bell                        bell on action needed
+-w <sec>, --watch <sec>           after displaying, wait <sec> and run again
 -i <re>, --ignore-branch <re>     ignore branches matching the regex <re>
 ```
 

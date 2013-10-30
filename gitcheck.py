@@ -6,7 +6,7 @@ import re
 import sys
 import getopt
 import fnmatch
-
+import time
 
 # Class for terminal Color
 class tcolor:
@@ -17,7 +17,8 @@ class tcolor:
     BLUE = "\033[96m"
     ORANGE = "\033[93m"
     MAGENTA = "\033[95m"
-
+    RESET = "\033[2J\033[H"
+    BELL = "\a"
 
 # Search all local repositories from current directory
 def searchRepositories():
@@ -37,22 +38,20 @@ def searchRepositories():
 
 
 # Check state of a git repository
-def checkRepository(rep, verbose=False, checkremote=False, ignoreBranch=r'^$'):
+def checkRepository(rep, verbose=False, ignoreBranch=r'^$'):
     aitem = []
     mitem = []
     ditem = []
     curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    if checkremote:
-        updateRemote(rep)
-
     branch = getDefaultBranch(rep)
     if re.match(ignoreBranch, branch):
-        return
+        return False
 
     changes = getLocalFilesChange(rep)
     ischange = len(changes) > 0
+    actionNeeded = False # actionNeeded is branch push/pull, not local file change.
 
     branch = getDefaultBranch(rep)
     topush = ""
@@ -62,6 +61,7 @@ def checkRepository(rep, verbose=False, checkremote=False, ignoreBranch=r'^$'):
         for r in remotes:
             count = len(getLocalToPush(rep, r, branch))
             ischange = ischange or (count > 0)
+            actionNeeded = actionNeeded or (count > 0)
             if count > 0:
                 topush += " %s%s%s[%sTo Push:%s%s]" % (
                     tcolor.ORANGE,
@@ -75,6 +75,7 @@ def checkRepository(rep, verbose=False, checkremote=False, ignoreBranch=r'^$'):
         for r in remotes:
             count = len(getRemoteToPull(rep, r, branch))
             ischange = ischange or (count > 0)
+            actionNeeded = actionNeeded or (count > 0)
             if count > 0:
                 topull += " %s%s%s[%sTo Pull:%s%s]" % (
                     tcolor.ORANGE,
@@ -148,6 +149,7 @@ def checkRepository(rep, verbose=False, checkremote=False, ignoreBranch=r'^$'):
                             tcolor.DEFAULT)
                         print(commit)
 
+    return actionNeeded
 
 def getLocalFilesChange(rep):
     files = []
@@ -226,10 +228,23 @@ def gitExec(rep, command):
 
 
 # Check all git repositories
-def gitcheck(verbose, checkremote, ignoreBranch):
+def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear):
     repo = searchRepositories()
+    actionNeeded = False
+
+    if checkremote:
+        for r in repo:
+            updateRemote(r)
+
+    if shouldClear:
+        print(tcolor.RESET)
+
     for r in repo:
-        checkRepository(r, verbose, checkremote, ignoreBranch)
+        if checkRepository(r, verbose, ignoreBranch):
+            actionNeeded = True
+
+    if actionNeeded and bellOnActionNeeded:
+        print(tcolor.BELL)
 
 
 def usage():
@@ -238,6 +253,8 @@ def usage():
     print("== Common options ==")
     print("  -v, --verbose                 Show files & commits")
     print("  -r, --remote                  force remote update(slow)")
+    print("  -b, --bell                    bell on action needed")
+    print("  -w <sec>, --watch <sec>       after displaying, wait <sec> and run again")
     print("  -i <re>, --ignore-branch <re> ignore branches matching the regex <re>")
 
 
@@ -245,13 +262,15 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhri:",
-            ["verbose", "help", "remote", "ignore-branch:"])
+            "vhrbw:i:",
+            ["verbose", "help", "remote", "bell", "watch:", "ignore-branch:"])
     except getopt.GetoptError:
         sys.exit(2)
 
     verbose = False
     checkremote = False
+    watchInterval = False
+    bellOnActionNeeded = False
     ignoreBranch = r'^$'  # empty string
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
@@ -260,6 +279,10 @@ def main():
             checkremote = True
         if opt in ("-r", "--remote"):
             checkremote = True
+        if opt in ("-b", "--bell"):
+            bellOnActionNeeded = True
+        if opt in ("-w", "--watch"):
+            watchInterval = arg
         if opt in ("-i", "--ignore-branch"):
             ignoreBranch = arg
 
@@ -267,7 +290,12 @@ def main():
             usage()
             sys.exit(0)
 
-    gitcheck(verbose, checkremote, ignoreBranch)
+    while True:
+        gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, watchInterval != False)
+        if watchInterval:
+            time.sleep(float(watchInterval))
+        else:
+            break
 
 if __name__ == "__main__":
     main()
