@@ -264,12 +264,14 @@ def main():
             sys.argv[1:],
             "vhrbw:i:",
             ["verbose", "help", "remote", "bell", "watch:", "ignore-branch:"])
-    except getopt.GetoptError:
+    except getopt.GetoptError, e:
+        if e.opt == 'w' and 'requires argument' in e.msg:
+            print "Please indicate nb seconds for refresh ex: gitcheck -w10"
         sys.exit(2)
 
     verbose = False
     checkremote = False
-    watchInterval = False
+    watchInterval = 0
     bellOnActionNeeded = False
     ignoreBranch = r'^$'  # empty string
     for opt, arg in opts:
@@ -291,7 +293,13 @@ def main():
             sys.exit(0)
 
     while True:
-        gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, watchInterval != False)
+        gitcheck(
+            verbose,
+            checkremote,
+            ignoreBranch,
+            bellOnActionNeeded,
+            watchInterval > 0
+        )
         if watchInterval:
             time.sleep(float(watchInterval))
         else:
