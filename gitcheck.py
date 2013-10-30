@@ -233,6 +233,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     actionNeeded = False
 
     if checkremote:
+        print ("Please waiting, refresh the remote repositories datas")
         for r in repo:
             updateRemote(r)
 
