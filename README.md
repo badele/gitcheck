@@ -7,7 +7,7 @@ If you working in multiples projects, you want can be analyzed in a single pass 
 ## Installation 
 
 ```
-pip install -e git+https://github.com/brorfred/gitcheck.git#egg=gitcheck
+pip install git+git://github.com/badele/gitcheck.git
 ```
 
 ## Examples utilizations
@@ -38,6 +38,7 @@ Substantially identical to the previous version, in bonus, it print who files mo
 -b, --bell                        bell on action needed
 -w <sec>, --watch <sec>           after displaying, wait <sec> and run again
 -i <re>, --ignore-branch <re>     ignore branches matching the regex <re>
+-d <dir>, --dir                   Search <dir> for repositories
 ```
 
 
