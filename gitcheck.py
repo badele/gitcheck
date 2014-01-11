@@ -21,9 +21,9 @@ class tcolor:
     BELL = "\a"
 
 # Search all local repositories from current directory
-def searchRepositories():
-    curdir = os.path.abspath(os.getcwd())
+def searchRepositories(dir=None):
 
+    curdir = os.path.abspath(os.getcwd()) if dir is None else dir
     repo = []
     rsearch = re.compile(r'^/?(.*?)/\.git')
     for root, dirnames, filenames in os.walk(curdir):
@@ -32,7 +32,7 @@ def searchRepositories():
             fdir = fdir.replace(curdir, '')
             m = rsearch.match(fdir)
             if m:
-                repo.append(m.group(1))
+                repo.append(os.path.join(curdir, m.group(1)))
 
     return repo
 
@@ -42,7 +42,6 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$'):
     aitem = []
     mitem = []
     ditem = []
-    curdir = os.path.abspath(os.getcwd())
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
     branch = getDefaultBranch(rep)
@@ -153,7 +152,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$'):
 
 def getLocalFilesChange(rep):
     files = []
-    curdir = os.path.abspath(os.getcwd())
+    #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
     result = gitExec(rep, "git status -suno"
                      % locals())
@@ -197,7 +196,6 @@ def updateRemote(rep):
 
 # Get Default branch for repository
 def getDefaultBranch(rep):
-    curdir = os.path.abspath(os.getcwd())
     sbranch = re.compile(r'^\* (.*)')
     gitbranch = gitExec(rep, "git branch | grep '*'"
                         % locals())
@@ -220,16 +218,14 @@ def getRemoteRepositories(rep):
 
 # Custom git command
 def gitExec(rep, command):
-    curdir = os.path.abspath(os.getcwd())
-    cmd = "cd %(curdir)s/%(rep)s ; %(command)s" % locals()
-
+    cmd = "cd %(rep)s ; %(command)s" % locals()
     cmd = os.popen(cmd)
     return cmd.read()
 
 
 # Check all git repositories
-def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear):
-    repo = searchRepositories()
+def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir):
+    repo = searchRepositories(searchDir)
     actionNeeded = False
 
     if checkremote:
@@ -257,14 +253,16 @@ def usage():
     print("  -b, --bell                    bell on action needed")
     print("  -w <sec>, --watch <sec>       after displaying, wait <sec> and run again")
     print("  -i <re>, --ignore-branch <re> ignore branches matching the regex <re>")
+    print("  -d <dir>,                     Search <dir> for repositories")
 
 
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrbw:i:",
-            ["verbose", "help", "remote", "bell", "watch:", "ignore-branch:"])
+            "vhrbw:i:d:",
+            ["verbose", "help", "remote", "bell", "watch:", "ignore-branch:",
+             "dir:"])
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
@@ -274,6 +272,7 @@ def main():
     checkremote = False
     watchInterval = 0
     bellOnActionNeeded = False
+    searchDir = None
     ignoreBranch = r'^$'  # empty string
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
@@ -288,7 +287,9 @@ def main():
             watchInterval = arg
         if opt in ("-i", "--ignore-branch"):
             ignoreBranch = arg
-
+        if opt in ("-d", "--dir"):
+            searchDir = arg
+            
         if opt in ("-h", "--help"):
             usage()
             sys.exit(0)
@@ -299,7 +300,8 @@ def main():
             checkremote,
             ignoreBranch,
             bellOnActionNeeded,
-            watchInterval > 0
+            watchInterval > 0,
+            searchDir
         )
         if watchInterval:
             time.sleep(float(watchInterval))

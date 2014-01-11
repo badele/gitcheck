@@ -4,6 +4,12 @@
 
 If you working in multiples projects, you want can be analyzed in a single pass of the changes in your projects. gitcheck is script who scan recursive directory to find a git directory and analyse all modifications.
 
+## Installation 
+
+```
+pip install -e git+https://github.com/brorfred/gitcheck.git#egg=gitcheck
+```
+
 ## Examples utilizations
 
 ### Simple version
