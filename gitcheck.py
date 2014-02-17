@@ -90,6 +90,20 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$'):
     else:
         color = tcolor.DEFAULT + tcolor.GREEN
 
+    # Remove trailing slash from repository name
+    if rep[-1:] == '/':
+        rep = rep[:-1]
+
+    # Do some magic to not show the absolute path as repository name
+    # Case 1: script was started in a directory that is a git repo
+    if len(rep) == len(os.path.abspath(os.getcwd())):
+        (head, tail) = os.path.split(rep)
+        if tail != '':
+            rep = tail
+    # Case 2: script was started in a directory with possible subdirs that contain git repos
+    else:
+        rep = rep[len(os.path.abspath(os.getcwd()))+1:]
+
     # Print result
     prjname = "%s%s%s" % (color, rep, tcolor.DEFAULT)
     if len(changes) > 0:
