@@ -23,6 +23,9 @@ class tcolor:
 # Search all local repositories from current directory
 def searchRepositories(dir=None):
 
+    # if trailing slash is in argument of option -d, it won't work -> get rid of it
+    if dir != None and dir[-1:] == '/':
+        dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
     repo = []
     rsearch = re.compile(r'^/?(.*?)/\.git')
@@ -95,15 +98,17 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$'):
         rep = rep[:-1]
 
     # Do some magic to not show the absolute path as repository name
-    repname = rep
     # Case 1: script was started in a directory that is a git repo
-    if len(rep) == len(os.path.abspath(os.getcwd())):
+    if rep == os.path.abspath(os.getcwd()):
         (head, tail) = os.path.split(rep)
         if tail != '':
             repname = tail
     # Case 2: script was started in a directory with possible subdirs that contain git repos
-    else:
+    elif rep.find(os.path.abspath(os.getcwd())) == 0:
         repname = rep[len(os.path.abspath(os.getcwd()))+1:]
+    # Case 3: script was started with -d and above cases do not apply
+    else:
+        repname = rep
 
     # Print result
     prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
