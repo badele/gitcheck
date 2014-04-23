@@ -30,7 +30,7 @@ def searchRepositories(dir=None, depth=None):
     startinglevel = curdir.count(os.sep)        
     repo = []
     rsearch = re.compile(r'^/?(.*?)/\.git')
-    for root, dirnames, filenames in os.walk(curdir):
+    for root, dirnames, filenames in os.walk(curdir, followlinks=True):
         level = root.count(os.sep) - startinglevel                
         if depth == None or level <= depth:            
             for dirnames in fnmatch.filter(dirnames, '*.git'):
