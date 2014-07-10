@@ -27,12 +27,12 @@ def searchRepositories(dir=None, depth=None):
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
-    startinglevel = curdir.count(os.sep)        
+    startinglevel = curdir.count(os.sep)
     repo = []
     rsearch = re.compile(r'^/?(.*?)/\.git')
     for root, dirnames, filenames in os.walk(curdir, followlinks=True):
-        level = root.count(os.sep) - startinglevel                
-        if depth == None or level <= depth:            
+        level = root.count(os.sep) - startinglevel
+        if depth == None or level <= depth:
             for dirnames in fnmatch.filter(dirnames, '*.git'):
                 fdir = os.path.join(root, dirnames)
                 fdir = fdir.replace(curdir, '')
@@ -90,7 +90,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                     tcolor.DEFAULT,
                     count
                 )
-    if ischange or not quiet:            
+    if ischange or not quiet:
         if ischange:
             color = tcolor.BOLD + tcolor.RED
         else:
@@ -241,13 +241,13 @@ def getRemoteRepositories(rep):
 
 # Custom git command
 def gitExec(rep, command):
-    cmd = "cd %(rep)s ; %(command)s" % locals()
+    cmd = "cd \"%(rep)s\" ; %(command)s" % locals()
     cmd = os.popen(cmd)
     return cmd.read()
 
 
 # Check all git repositories
-def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet):    
+def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet):
     repo = searchRepositories(searchDir, depth)
     actionNeeded = False
 
@@ -280,7 +280,7 @@ def usage():
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
 
-def main():    
+def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
@@ -290,7 +290,7 @@ def main():
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
-        else:    
+        else:
             print e.msg
         sys.exit(2)
 
@@ -302,7 +302,7 @@ def main():
     depth = None
     quiet = False
     ignoreBranch = r'^$'  # empty string
-    for opt, arg in opts:        
+    for opt, arg in opts:
         if opt in ("-v", "--verbose"):
             verbose = True
         elif opt in ("-r", "--remote"):
@@ -316,7 +316,7 @@ def main():
                 watchInterval = float(arg)
             except ValueError:
                 print "option %s requires numeric value" % opt
-                sys.exit(2)              
+                sys.exit(2)
         elif opt in ("-i", "--ignore-branch"):
             ignoreBranch = arg
         elif opt in ("-d", "--dir"):
@@ -326,13 +326,13 @@ def main():
                 depth = int(arg)
             except ValueError:
                 print "option %s requires int value" % opt
-                sys.exit(2)  
+                sys.exit(2)
         elif opt in ("-q", "--quiet"):
-            quiet = True    
+            quiet = True
         elif opt in ("-h", "--help"):
             usage()
             sys.exit(0)
-#        else:            
+#        else:
 #            print "Unhandled option %s" % opt
 #            sys.exit(2)
 
