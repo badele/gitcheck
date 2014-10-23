@@ -33,8 +33,8 @@ Remove unsupported github tags:
 
 setup(
     name='gitcheck',
-    version='0.3',
-    description='Check multiple git repository in one pass',
+    version='0.3.8',
+    description='Check multiple git repository in one pass, gitExec modified by Christian Tremblay',
     long_description=rst('README.rst'),
 
     author='Bruno Adele',

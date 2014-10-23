@@ -7,41 +7,65 @@ import sys
 import getopt
 import fnmatch
 import time
+import subprocess
+from subprocess import PIPE, call, Popen
 
 # Class for terminal Color
 class tcolor:
     DEFAULT = "\033[0m"
     BOLD = "\033[1m"
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    BLUE = "\033[96m"
-    ORANGE = "\033[93m"
-    MAGENTA = "\033[95m"
+    RED = "\033[0;1;31;40m"
+    GREEN = "\033[0;1;32;40m"
+    BLUE = "\033[1;34;4;47m"
+    ORANGE = "\033[1;33;4;41m"
+    MAGENTA = "\033[0;1;36;40m"
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
 # Search all local repositories from current directory
-def searchRepositories(dir=None, depth=None):
+#def searchRepositories(dir=None, depth=None):
+#
+#    # if trailing slash is in argument of option -d, it won't work -> get rid of it
+#    if dir != None and dir[-1:] == '/':
+#        dir = dir[:-1]
+#    curdir = os.path.abspath(os.getcwd()) if dir is None else dir
+#    startinglevel = curdir.count(os.sep)
+#    repo = []
+#    rsearch = re.compile(r'^/?(.*?)/\.git')
+#    for root, dirnames, filenames in os.walk(curdir, followlinks=True):
+#        level = root.count(os.sep) - startinglevel
+#        if depth == None or level <= depth:
+#            for dirnames in fnmatch.filter(dirnames, '*.git'):
+#                fdir = os.path.join(root, dirnames)
+#                fdir = fdir.replace(curdir, '')
+#                m = rsearch.match(fdir)
+#                if m:
+#                    repo.append(os.path.join(curdir, m.group(1)))
+#
+#    return repo
 
-    # if trailing slash is in argument of option -d, it won't work -> get rid of it
+def searchRepositories(dir=None, depth=None): 
+
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
     startinglevel = curdir.count(os.sep)
     repo = []
-    rsearch = re.compile(r'^/?(.*?)/\.git')
-    for root, dirnames, filenames in os.walk(curdir, followlinks=True):
-        level = root.count(os.sep) - startinglevel
-        if depth == None or level <= depth:
-            for dirnames in fnmatch.filter(dirnames, '*.git'):
-                fdir = os.path.join(root, dirnames)
-                fdir = fdir.replace(curdir, '')
-                m = rsearch.match(fdir)
-                if m:
-                    repo.append(os.path.join(curdir, m.group(1)))
 
+    def step(ext, dirname, names):
+        ext = ext.lower()
+        for name in names:
+            if name.lower().endswith(ext):
+                repo.append(os.path.join(dirname, name)[:-5])
+                #print '%s' % (os.path.join(dirname, name))[:-5]
+
+    def is_git_directory(path = '.'):
+        return subprocess.call(['git', '-C', path, 'status'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 0
+
+    # Start the walk
+    #print "Walking the path..."
+    os.path.walk(curdir, step, '.git')
     return repo
-
 
 # Check state of a git repository
 def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
@@ -177,8 +201,7 @@ def getLocalFilesChange(rep):
     files = []
     #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
-    result = gitExec(rep, "git status -suno"
-                     % locals())
+    result = gitExec(rep, "status -suno")
 
     lines = result.split('\n')
     for l in lines:
@@ -190,15 +213,15 @@ def getLocalFilesChange(rep):
 
 
 def hasRemoteBranch(rep, remote, branch):
-    result = gitExec(rep, "git branch -r | grep '%(remote)s/%(branch)s'"
-                     % locals())
-    return (result != "")
+    #result = gitExec(rep, 'branch -r | grep "%s/%s"' % (remote,branch))
+    #return (result != "")
+	return True
 
 
 def getLocalToPush(rep, remote, branch):
     if not hasRemoteBranch(rep, remote, branch):
         return []
-    result = gitExec(rep, "git log %(remote)s/%(branch)s..HEAD --oneline"
+    result = gitExec(rep, "log %(remote)s/%(branch)s..HEAD --oneline"
                      % locals())
 
     return [x for x in result.split('\n') if x]
@@ -207,20 +230,20 @@ def getLocalToPush(rep, remote, branch):
 def getRemoteToPull(rep, remote, branch):
     if not hasRemoteBranch(rep, remote, branch):
         return []
-    result = gitExec(rep, "git log HEAD..%(remote)s/%(branch)s --oneline"
+    result = gitExec(rep, "log HEAD..%(remote)s/%(branch)s --oneline"
                      % locals())
 
     return [x for x in result.split('\n') if x]
 
 
 def updateRemote(rep):
-    gitExec(rep, "git remote update")
+    gitExec(rep, "remote update")
 
 
 # Get Default branch for repository
 def getDefaultBranch(rep):
     sbranch = re.compile(r'^\* (.*)')
-    gitbranch = gitExec(rep, "git branch | grep '*'"
+    gitbranch = gitExec(rep, "branch"
                         % locals())
 
     branch = ""
@@ -230,9 +253,9 @@ def getDefaultBranch(rep):
 
     return branch
 
-
+#git -C "c:\0Programmes\Librairies\gitcheck" branch -r | grep 'origin/master'
 def getRemoteRepositories(rep):
-    result = gitExec(rep, "git remote"
+    result = gitExec(rep, "remote"
                      % locals())
 
     remotes = [x for x in result.split('\n') if x]
@@ -240,11 +263,23 @@ def getRemoteRepositories(rep):
 
 
 # Custom git command
-def gitExec(rep, command):
-    cmd = "cd \"%(rep)s\" ; %(command)s" % locals()
-    cmd = os.popen(cmd)
-    return cmd.read()
+#def gitExec(rep, command):
+#    cmd = "cd \"%(rep)s\" ; %(command)s" % locals()
+#    cmd = os.popen(cmd)
+#    return cmd.read()
 
+def gitExec(path,cmd):
+    commandToExecute = "git -C \"%s\" %s" % (path,cmd)
+    #print "%s" % commandToExecute 
+    p = subprocess.Popen(commandToExecute, stdout=PIPE, stderr=PIPE, bufsize=256*1024*1024)
+    output, errors = p.communicate()
+    if p.returncode:
+        raise Exception(errors)
+    else:
+        # Print stdout from cmd call
+        #print "%s" % output
+        pass
+    return output
 
 # Check all git repositories
 def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet):
