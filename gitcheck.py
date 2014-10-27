@@ -9,6 +9,7 @@ import fnmatch
 import time
 import subprocess
 from subprocess import PIPE, call, Popen
+from os import walk
 
 # Class for terminal Color
 class tcolor:
@@ -22,49 +23,24 @@ class tcolor:
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
+    
 # Search all local repositories from current directory
-#def searchRepositories(dir=None, depth=None):
-#
-#    # if trailing slash is in argument of option -d, it won't work -> get rid of it
-#    if dir != None and dir[-1:] == '/':
-#        dir = dir[:-1]
-#    curdir = os.path.abspath(os.getcwd()) if dir is None else dir
-#    startinglevel = curdir.count(os.sep)
-#    repo = []
-#    rsearch = re.compile(r'^/?(.*?)/\.git')
-#    for root, dirnames, filenames in os.walk(curdir, followlinks=True):
-#        level = root.count(os.sep) - startinglevel
-#        if depth == None or level <= depth:
-#            for dirnames in fnmatch.filter(dirnames, '*.git'):
-#                fdir = os.path.join(root, dirnames)
-#                fdir = fdir.replace(curdir, '')
-#                m = rsearch.match(fdir)
-#                if m:
-#                    repo.append(os.path.join(curdir, m.group(1)))
-#
-#    return repo
-
 def searchRepositories(dir=None, depth=None): 
-
+    print 'Beginning scan... building list of git folders'
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
     startinglevel = curdir.count(os.sep)
     repo = []
 
-    def step(ext, dirname, names):
-        ext = ext.lower()
-        for name in names:
-            if name.lower().endswith(ext):
-                repo.append(os.path.join(dirname, name)[:-5])
-                #print '%s' % (os.path.join(dirname, name))[:-5]
-
-    def is_git_directory(path = '.'):
-        return subprocess.call(['git', '-C', path, 'status'], stderr=subprocess.STDOUT, stdout = open(os.devnull, 'w')) == 0
-
-    # Start the walk
-    #print "Walking the path..."
-    os.path.walk(curdir, step, '.git')
+    for directory, dirnames, filenames in os.walk(curdir):
+        level = directory.count(os.sep) - startinglevel        
+        if depth == None or level <= depth:          
+            for d in dirnames:
+                if d.endswith('.git'):  
+                    repo.append(os.path.join(directory, d)[:-5])
+    
+    print 'Done'
     return repo
 
 # Check state of a git repository
@@ -213,9 +189,8 @@ def getLocalFilesChange(rep):
 
 
 def hasRemoteBranch(rep, remote, branch):
-    #result = gitExec(rep, 'branch -r | grep "%s/%s"' % (remote,branch))
-    #return (result != "")
-	return True
+    result = gitExec(rep, 'branch -r')
+    return '%s/%s'% (remote,branch) in result
 
 
 def getLocalToPush(rep, remote, branch):
@@ -253,7 +228,6 @@ def getDefaultBranch(rep):
 
     return branch
 
-#git -C "c:\0Programmes\Librairies\gitcheck" branch -r | grep 'origin/master'
 def getRemoteRepositories(rep):
     result = gitExec(rep, "remote"
                      % locals())
@@ -270,14 +244,11 @@ def getRemoteRepositories(rep):
 
 def gitExec(path,cmd):
     commandToExecute = "git -C \"%s\" %s" % (path,cmd)
-    #print "%s" % commandToExecute 
     p = subprocess.Popen(commandToExecute, stdout=PIPE, stderr=PIPE, bufsize=256*1024*1024)
     output, errors = p.communicate()
     if p.returncode:
         raise Exception(errors)
     else:
-        # Print stdout from cmd call
-        #print "%s" % output
         pass
     return output
 
