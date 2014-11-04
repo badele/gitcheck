@@ -330,14 +330,7 @@ def sendReport(msg):
     
     # Create the body of the message (a plain-text and an HTML version).
     text = "Hi!\nHow are you?\nHere is the link you wanted:\nhttp://www.python.org"
-    html = """\
-    <html>
-      <head>Git Report</head>
-      <body>
-       %s
-      </body>
-    </html>
-    """ % msg
+    html = "<html>\n<head>Git Report</head>\n<body>%s</body>\n</html>" % msg
     
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
