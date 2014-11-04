@@ -9,9 +9,7 @@ import fnmatch
 import time
 import subprocess
 from subprocess import PIPE, call, Popen
-from os import walk
 import smtplib
-import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -78,6 +76,8 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
     branch = getDefaultBranch(rep)
     topush = ""
     topull = ""
+    html.topush = ""
+    html.topull = ""
     if branch != "":
         remotes = getRemoteRepositories(rep)
         for r in remotes:
@@ -161,53 +161,53 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
             html.strlocal = ""
         
         if email:
-            html.msg += "<li>%s/%s %s%s%s</li>" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
+            html.msg += "<li>%s/%s %s %s %s</li>" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
             
         else:
             print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
                
-        if verbose:
-            if ischange > 0:
-                filename = "  |--Local"
-                print(filename)
-                for c in changes:
-                    filename = "     |--%s%s%s" % (
-                        tcolor.ORANGE,
-                        c[1],
-                        tcolor.DEFAULT)
+            if verbose:
+                if ischange > 0:
+                    filename = "  |--Local"
                     print(filename)
-
-            if branch != "":
-                remotes = getRemoteRepositories(rep)
-                for r in remotes:
-                    commits = getLocalToPush(rep, r, branch)
-                    if len(commits) > 0:
-                        rname = "  |--%(r)s" % locals()
-                        print(rname)
-                        for commit in commits:
-                            commit = "     |--%s[To Push]%s %s%s%s" % (
-                                tcolor.MAGENTA,
-                                tcolor.DEFAULT,
-                                tcolor.BLUE,
-                                commit,
-                                tcolor.DEFAULT)
-                            print(commit)
-
-            if branch != "":
-                remotes = getRemoteRepositories(rep)
-                for r in remotes:
-                    commits = getRemoteToPull(rep, r, branch)
-                    if len(commits) > 0:
-                        rname = "  |--%(r)s" % locals()
-                        print(rname)
-                        for commit in commits:
-                            commit = "     |--%s[To Pull]%s %s%s%s" % (
-                                tcolor.MAGENTA,
-                                tcolor.DEFAULT,
-                                tcolor.BLUE,
-                                commit,
-                                tcolor.DEFAULT)
-                            print(commit)
+                    for c in changes:
+                        filename = "     |--%s%s%s" % (
+                            tcolor.ORANGE,
+                            c[1],
+                            tcolor.DEFAULT)
+                        print(filename)
+    
+                if branch != "":
+                    remotes = getRemoteRepositories(rep)
+                    for r in remotes:
+                        commits = getLocalToPush(rep, r, branch)
+                        if len(commits) > 0:
+                            rname = "  |--%(r)s" % locals()
+                            print(rname)
+                            for commit in commits:
+                                commit = "     |--%s[To Push]%s %s%s%s" % (
+                                    tcolor.MAGENTA,
+                                    tcolor.DEFAULT,
+                                    tcolor.BLUE,
+                                    commit,
+                                    tcolor.DEFAULT)
+                                print(commit)
+    
+                if branch != "":
+                    remotes = getRemoteRepositories(rep)
+                    for r in remotes:
+                        commits = getRemoteToPull(rep, r, branch)
+                        if len(commits) > 0:
+                            rname = "  |--%(r)s" % locals()
+                            print(rname)
+                            for commit in commits:
+                                commit = "     |--%s[To Pull]%s %s%s%s" % (
+                                    tcolor.MAGENTA,
+                                    tcolor.DEFAULT,
+                                    tcolor.BLUE,
+                                    commit,
+                                    tcolor.DEFAULT)
+                                print(commit)
 
     return actionNeeded
 
@@ -274,12 +274,6 @@ def getRemoteRepositories(rep):
     return remotes
 
 
-# Custom git command
-#def gitExec(rep, command):
-#    cmd = "cd \"%(rep)s\" ; %(command)s" % locals()
-#    cmd = os.popen(cmd)
-#    return cmd.read()
-
 def gitExec(path,cmd):
     commandToExecute = "git -C \"%s\" %s" % (path,cmd)
     p = subprocess.Popen(commandToExecute, stdout=PIPE, stderr=PIPE, bufsize=256*1024*1024)
@@ -309,10 +303,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
                     
-#    if email:        
-#        print ("Sending email")
-#        sendReport(html.msg+'</ul>')
-    print ("Finished : %s") % html.msg
+    html.msg += "</ul>"
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
     
@@ -320,7 +311,8 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
 
 def sendReport(content):
     userPath = expanduser('~')
-    filename = r'%s\Documents\.gitcheck\mail.properties' %(userPath)    
+    filepath = r'%s\Documents\.gitcheck' %(userPath)     
+    filename = filepath + "//mail.properties"    
     config = ConfigObj(filename)    
     
     # Create message container - the correct MIME type is multipart/alternative.
@@ -331,8 +323,11 @@ def sendReport(content):
     
     # Create the body of the message (a plain-text and an HTML version).
     text = "Rapport Gitcheck\n\n%s" % content
-    html = "<html>\n<head><h1>Gitcheck Report</h1></head>\n<body>%s</body></html>" % content
-    
+    html = "<html><head><h1>Gitcheck Report</h1></head><body>%s</body></html>" % content
+    #Write html file to disk    
+    f = open(filepath+'//result.html', 'w')
+    f.write(html) 
+    print ("File saved under %s\\result.html" %filepath) 
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(html, 'html')
@@ -349,6 +344,23 @@ def sendReport(content):
     # and message to send - here it is sent as one string.
     s.sendmail(config['from'], config['to'], msg.as_string())
     s.quit()
+
+def initEmailConfig():
+    config = ConfigObj()
+    userPath = expanduser('~')
+    saveFilePath = r'%s\Documents\.gitcheck' %(userPath)
+    if not os.path.exists(saveFilePath):
+        os.makedirs(saveFilePath)
+    config.filename = saveFilePath+'\mail.properties'
+    #
+    config['smtp'] = 'yourServer'
+    config['smtp_port'] = 25
+    config['from'] = 'from@server.com'
+    config['to'] = 'to@server.com'
+    
+    config.write()
+    print ('Please, modify config file located here : %s') % config.filename
+
        
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
@@ -363,6 +375,7 @@ def usage():
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
+    print("  --initEmail                          Initialize mail.properties file (has to be modified by user)")
 
 def main():
     try:
@@ -370,7 +383,7 @@ def main():
             sys.argv[1:],
             "vhrbw:i:d:m:q:e",
             ["verbose", "help", "remote", "bell", "watch=", "ignore-branch=",
-             "dir=", "maxdepth=", "quiet","email"])
+             "dir=", "maxdepth=", "quiet","email", "initEmail"])
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
@@ -416,6 +429,9 @@ def main():
             quiet = True
         elif opt in ("-e", "--email"):
             email = True
+        elif opt in ("--initEmail"):
+            initEmailConfig()
+            sys.exit(0)
         elif opt in ("-h", "--help"):
             usage()
             sys.exit(0)
@@ -439,7 +455,7 @@ def main():
         if gitcheck:
             if email:        
                 print ("Sending email")
-                sendReport(html.msg+'</ul>')
+                sendReport(html.msg)
 
         if watchInterval:
             time.sleep(watchInterval)
