@@ -23,6 +23,17 @@ class tcolor:
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
+class htmlColor:
+    DEFAULT = "\033[0m"
+    BOLD = "\033[1m"
+    RED = "\033[0;1;31;40m"
+    GREEN = "\033[0;1;32;40m"
+    BLUE = "\033[0;1;36;40m"
+    ORANGE = "\033[0;1;33;40m"
+    MAGENTA = "\033[0;1;36;40m"
+    RESET = "\033[2J\033[H"
+    BELL = "\a"
+    
     
 # Search all local repositories from current directory
 def searchRepositories(dir=None, depth=None): 
@@ -247,6 +258,7 @@ def gitExec(path,cmd):
     p = subprocess.Popen(commandToExecute, stdout=PIPE, stderr=PIPE, bufsize=256*1024*1024)
     output, errors = p.communicate()
     if p.returncode:
+        print 'Failed running %s' % commandToExecute
         raise Exception(errors)
     else:
         pass
