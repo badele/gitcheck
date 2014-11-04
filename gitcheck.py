@@ -12,6 +12,8 @@ from subprocess import PIPE, call, Popen
 from os import walk
 import smtplib
 import base64
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
 # Class for terminal Color
 class tcolor:
@@ -319,19 +321,40 @@ def sendReport(msg):
     sender = 'git_notifications@servisys.com'
     receivers = ['christian.tremblay@servisys.com']
     
-    base = """From: Git <git_notifications@servisys.com>
-    To: Christian Tremblay <christian.tremblay@servisys.com>
-    Subject: Rapport git
-    \n
-    """
-    message = base + msg
-
-    try:
-       smtpObj = smtplib.SMTP('relais.videotron.ca',25)
-       smtpObj.sendmail(sender, receivers, message)         
-       print "Successfully sent email"
-    except Exception:
-       print "Error: unable to send email"
+    
+    # Create message container - the correct MIME type is multipart/alternative.
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = "Link"
+    msg['From'] = me
+    msg['To'] = you
+    
+    # Create the body of the message (a plain-text and an HTML version).
+    text = "Hi!\nHow are you?\nHere is the link you wanted:\nhttp://www.python.org"
+    html = """\
+    <html>
+      <head>Git Report</head>
+      <body>
+       %s
+      </body>
+    </html>
+    """ % msg
+    
+    # Record the MIME types of both parts - text/plain and text/html.
+    part1 = MIMEText(text, 'plain')
+    part2 = MIMEText(html, 'html')
+    
+    # Attach parts into message container.
+    # According to RFC 2046, the last part of a multipart message, in this case
+    # the HTML message, is best and preferred.
+    msg.attach(part1)
+    msg.attach(part2)
+    
+    # Send the message via local SMTP server.
+    s = smtplib.SMTP('relais.videotron.ca',25)
+    # sendmail function takes 3 arguments: sender's address, recipient's address
+    # and message to send - here it is sent as one string.
+    s.sendmail(sender, receivers, msg.as_string())
+    s.quit()
        
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
