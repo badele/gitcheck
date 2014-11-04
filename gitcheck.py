@@ -317,7 +317,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
 
-def sendReport(msg):
+def sendReport(content):
     sender = 'git_notifications@servisys.com'
     receivers = ['christian.tremblay@servisys.com']
     
@@ -330,7 +330,7 @@ def sendReport(msg):
     
     # Create the body of the message (a plain-text and an HTML version).
     text = "Hi!\nHow are you?\nHere is the link you wanted:\nhttp://www.python.org"
-    html = "<html>\n<head>Git Report<//head>\n<body>%s<//body>\n<//html>" % msg
+    html = "<html>\n<head>Git Report<//head>\n<body>%s<//body>\n<//html>" % content
     
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
