@@ -313,17 +313,18 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
         print(tcolor.BELL)
 
 def sendReport(msg):
-    sender = 'alarme@servisys.com'
+    sender = 'git_notifications@servisys.com'
     receivers = ['christian.tremblay@servisys.com']
     
     base = """From: Git <git_notifications@servisys.com>
     To: Christian Tremblay <christian.tremblay@servisys.com>
     Subject: Rapport git
-    
+    \n
     """
     message = base + msg
+
     try:
-       smtpObj = smtplib.SMTP('aspmx.l.google.com',25)
+       smtpObj = smtplib.SMTP('relais.videotron.ca',25)
        smtpObj.sendmail(sender, receivers, message)         
        print "Successfully sent email"
     except Exception:
