@@ -308,6 +308,9 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     for r in repo:
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
+                    
+    if actionNeeded and email:        
+        sendReport(html.msg)
 
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
@@ -415,8 +418,7 @@ def main():
             quiet,
             email
         )
-        if email:        
-            sendReport(html.msg)
+
         if watchInterval:
             time.sleep(watchInterval)
         else:
