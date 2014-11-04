@@ -10,6 +10,8 @@ import time
 import subprocess
 from subprocess import PIPE, call, Popen
 from os import walk
+import smtplib
+import base64
 
 # Class for terminal Color
 class tcolor:
@@ -23,7 +25,7 @@ class tcolor:
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
-class htmlColor:
+class html:
     DEFAULT = "\033[0m"
     BOLD = "\033[1m"
     RED = "\033[0;1;31;40m"
@@ -33,6 +35,11 @@ class htmlColor:
     MAGENTA = "\033[0;1;36;40m"
     RESET = "\033[2J\033[H"
     BELL = "\a"
+    msg = ""
+    topull = ""
+    topush = ""
+    strlocal = ""
+    prjname = ""
     
     
 # Search all local repositories from current directory
@@ -55,7 +62,7 @@ def searchRepositories(dir=None, depth=None):
     return repo
 
 # Check state of a git repository
-def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
+def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=False):
     aitem = []
     mitem = []
     ditem = []
@@ -87,6 +94,10 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                     tcolor.DEFAULT,
                     count
                 )
+                html.topush += '<b style="color:black">%s</b>[<b style="color:cyan">To Push:%s</b>]' % (
+                    r,
+                    count
+                )
 
         for r in remotes:
             count = len(getRemoteToPull(rep, r, branch))
@@ -101,12 +112,11 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                     tcolor.DEFAULT,
                     count
                 )
+                html.topull += '<b style="color:black">%s</b>[<b style="color:cyan">To Pull:%s</b>]' % (
+                    r,
+                    count
+                )
     if ischange or not quiet:
-        if ischange:
-            color = tcolor.BOLD + tcolor.RED
-        else:
-            color = tcolor.DEFAULT + tcolor.GREEN
-
         # Remove trailing slash from repository/directory name
         if rep[-1:] == '/':
             rep = rep[:-1]
@@ -124,8 +134,16 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
         else:
             repname = rep
 
+        if ischange:
+            color = tcolor.BOLD + tcolor.RED
+            html.prjname = '<b style="color:red">%s</b>' % (repname)
+        else:
+            color = tcolor.DEFAULT + tcolor.GREEN
+            html.prjname = '<b style="color:green">%s</b>' % (repname)
+
         # Print result
         prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
+        
         if len(changes) > 0:
             strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
             strlocal += "%sTo Commit:%s%s" % (
@@ -133,12 +151,22 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                 tcolor.DEFAULT,
                 len(getLocalFilesChange(rep))
             )
-
+            html.strlocal = '<b style="color:yellow"> Local</b>['
+            html.strlocal += "To Commit:%s" % (
+                len(getLocalFilesChange(rep))
+            )
             strlocal += "]"
+            html.strlocal += "]"
         else:
             strlocal = ""
-
-        print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
+            html.strlocal = ""
+        
+        if email:
+            html.msg += "%s/%s %s%s%s\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
+            
+        else:
+            print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
+               
         if verbose:
             if ischange > 0:
                 filename = "  |--Local"
@@ -265,7 +293,7 @@ def gitExec(path,cmd):
     return output
 
 # Check all git repositories
-def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet):
+def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet, email):
     repo = searchRepositories(searchDir, depth)
     actionNeeded = False
 
@@ -278,13 +306,29 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
         print(tcolor.RESET)
 
     for r in repo:
-        if checkRepository(r, verbose, ignoreBranch, quiet):
+        if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
 
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
 
-
+def sendReport(msg):
+    sender = 'alarme@servisys.com'
+    receivers = ['christian.tremblay@servisys.com']
+    
+    base = """From: Git <git_notifications@servisys.com>
+    To: Christian Tremblay <christian.tremblay@servisys.com>
+    Subject: Rapport git
+    
+    """
+    message = base + msg
+    try:
+       smtpObj = smtplib.SMTP('aspmx.l.google.com',25)
+       smtpObj.sendmail(sender, receivers, message)         
+       print "Successfully sent email"
+    except Exception:
+       print "Error: unable to send email"
+       
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
     print("Check multiple git repository in one pass")
@@ -297,14 +341,15 @@ def usage():
     print("  -d <dir>, --dir=<dir>                Search <dir> for repositories")
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
+    print("  -e, --email                          Send an email with result as html")
 
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrbw:i:d:m:q",
+            "vhrbw:i:d:m:q:e",
             ["verbose", "help", "remote", "bell", "watch=", "ignore-branch=",
-             "dir=", "maxdepth=", "quiet"])
+             "dir=", "maxdepth=", "quiet","email"])
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
@@ -314,6 +359,7 @@ def main():
 
     verbose = False
     checkremote = False
+    email = False
     watchInterval = 0
     bellOnActionNeeded = False
     searchDir = None
@@ -347,6 +393,8 @@ def main():
                 sys.exit(2)
         elif opt in ("-q", "--quiet"):
             quiet = True
+        elif opt in ("-e", "--email"):
+            email = True
         elif opt in ("-h", "--help"):
             usage()
             sys.exit(0)
@@ -363,8 +411,11 @@ def main():
             watchInterval > 0,
             searchDir,
             depth,
-            quiet
+            quiet,
+            email
         )
+        if email:        
+            sendReport(html.msg)
         if watchInterval:
             time.sleep(watchInterval)
         else:
