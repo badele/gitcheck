@@ -319,7 +319,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
 
 def sendReport(content):
     sender = 'git_notifications@servisys.com'
-    receivers = ['christian.tremblay@servisys.com']
+    receivers = 'christian.tremblay@servisys.com'
     
     
     # Create message container - the correct MIME type is multipart/alternative.
