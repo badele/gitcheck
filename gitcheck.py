@@ -15,6 +15,11 @@ import base64
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+from configobj import ConfigObj
+from os.path import expanduser
+import os
+
+
 # Class for terminal Color
 class tcolor:
     DEFAULT = "\033[0m"
@@ -28,16 +33,8 @@ class tcolor:
     BELL = "\a"
 
 class html:
-    DEFAULT = "\033[0m"
-    BOLD = "\033[1m"
-    RED = "\033[0;1;31;40m"
-    GREEN = "\033[0;1;32;40m"
-    BLUE = "\033[0;1;36;40m"
-    ORANGE = "\033[0;1;33;40m"
-    MAGENTA = "\033[0;1;36;40m"
-    RESET = "\033[2J\033[H"
     BELL = "\a"
-    msg = ""
+    msg = "<ul>"
     topull = ""
     topush = ""
     strlocal = ""
@@ -96,7 +93,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     tcolor.DEFAULT,
                     count
                 )
-                html.topush += '<b style="color:black">%s<//b>[<b style="color:cyan">To Push:%s<//b>]' % (
+                html.topush += '<b style="color:black">%s</b>[<b style="color:blue">To Push:</b><b style="color:black">%s</b>]' % (
                     r,
                     count
                 )
@@ -114,7 +111,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     tcolor.DEFAULT,
                     count
                 )
-                html.topull += '<b style="color:black">%s<//b>[<b style="color:cyan">To Pull:%s<//b>]' % (
+                html.topull += '<b style="color:black">%s</b>[<b style="color:blue">To Pull:</b><b style="color:black">%s</b>]' % (
                     r,
                     count
                 )
@@ -138,10 +135,10 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
 
         if ischange:
             color = tcolor.BOLD + tcolor.RED
-            html.prjname = '<b style="color:red">%s<//b>' % (repname)
+            html.prjname = '<b style="color:red">%s</b>' % (repname)
         else:
             color = tcolor.DEFAULT + tcolor.GREEN
-            html.prjname = '<b style="color:green">%s<//b>' % (repname)
+            html.prjname = '<b style="color:green">%s</b>' % (repname)
 
         # Print result
         prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
@@ -153,18 +150,18 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                 tcolor.DEFAULT,
                 len(getLocalFilesChange(rep))
             )
-            html.strlocal = '<b style="color:yellow"> Local<//b>['
+            html.strlocal = '<b style="color:orange"> Local</b><b style="color:black">['
             html.strlocal += "To Commit:%s" % (
                 len(getLocalFilesChange(rep))
             )
             strlocal += "]"
-            html.strlocal += "]"
+            html.strlocal += "]</b>"
         else:
             strlocal = ""
             html.strlocal = ""
         
         if email:
-            html.msg += "%s/%s %s%s%s\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
+            html.msg += "<li>%s/%s %s%s%s</li>" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
             
         else:
             print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
@@ -307,30 +304,34 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if shouldClear:
         print(tcolor.RESET)
 
+    print ("Processing repositories... please wait.")
     for r in repo:
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
                     
-    if email:        
-        sendReport(html.msg)
-
+#    if email:        
+#        print ("Sending email")
+#        sendReport(html.msg+'</ul>')
+    print ("Finished : %s") % html.msg
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
+    
+    return True
 
 def sendReport(content):
-    sender = 'git_notifications@servisys.com'
-    receivers = 'christian.tremblay@servisys.com'
-    
+    userPath = expanduser('~')
+    filename = r'%s\Documents\.gitcheck\mail.properties' %(userPath)    
+    config = ConfigObj(filename)    
     
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = "Link"
-    msg['From'] = sender
-    msg['To'] = receivers
+    msg['Subject'] = "Rapport Gitcheck"
+    msg['From'] = config['from']
+    msg['To'] = config['to']
     
     # Create the body of the message (a plain-text and an HTML version).
-    text = "Hi!\nHow are you?\nHere is the link you wanted:\nhttp://www.python.org"
-    html = "<html>\n<head>Git Report<//head>\n<body>%s<//body>\n<//html>" % content
+    text = "Rapport Gitcheck\n\n%s" % content
+    html = "<html>\n<head><h1>Gitcheck Report</h1></head>\n<body>%s</body></html>" % content
     
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
@@ -343,10 +344,10 @@ def sendReport(content):
     msg.attach(part2)
     
     # Send the message via local SMTP server.
-    s = smtplib.SMTP('relais.videotron.ca',25)
+    s = smtplib.SMTP(config['smtp'],config['smtp_port'])
     # sendmail function takes 3 arguments: sender's address, recipient's address
     # and message to send - here it is sent as one string.
-    s.sendmail(sender, receivers, msg.as_string())
+    s.sendmail(config['from'], config['to'], msg.as_string())
     s.quit()
        
 def usage():
@@ -361,7 +362,7 @@ def usage():
     print("  -d <dir>, --dir=<dir>                Search <dir> for repositories")
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
-    print("  -e, --email                          Send an email with result as html")
+    print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
 
 def main():
     try:
@@ -434,6 +435,11 @@ def main():
             quiet,
             email
         )
+        
+        if gitcheck:
+            if email:        
+                print ("Sending email")
+                sendReport(html.msg+'</ul>')
 
         if watchInterval:
             time.sleep(watchInterval)
