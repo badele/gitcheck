@@ -96,7 +96,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     tcolor.DEFAULT,
                     count
                 )
-                html.topush += '<b style="color:black">%s</b>[<b style="color:cyan">To Push:%s</b>]' % (
+                html.topush += '<b style="color:black">%s<//b>[<b style="color:cyan">To Push:%s<//b>]' % (
                     r,
                     count
                 )
@@ -114,7 +114,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     tcolor.DEFAULT,
                     count
                 )
-                html.topull += '<b style="color:black">%s</b>[<b style="color:cyan">To Pull:%s</b>]' % (
+                html.topull += '<b style="color:black">%s<//b>[<b style="color:cyan">To Pull:%s<//b>]' % (
                     r,
                     count
                 )
@@ -138,10 +138,10 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
 
         if ischange:
             color = tcolor.BOLD + tcolor.RED
-            html.prjname = '<b style="color:red">%s</b>' % (repname)
+            html.prjname = '<b style="color:red">%s<//b>' % (repname)
         else:
             color = tcolor.DEFAULT + tcolor.GREEN
-            html.prjname = '<b style="color:green">%s</b>' % (repname)
+            html.prjname = '<b style="color:green">%s<//b>' % (repname)
 
         # Print result
         prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
@@ -153,7 +153,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                 tcolor.DEFAULT,
                 len(getLocalFilesChange(rep))
             )
-            html.strlocal = '<b style="color:yellow"> Local</b>['
+            html.strlocal = '<b style="color:yellow"> Local<//b>['
             html.strlocal += "To Commit:%s" % (
                 len(getLocalFilesChange(rep))
             )
@@ -330,7 +330,7 @@ def sendReport(msg):
     
     # Create the body of the message (a plain-text and an HTML version).
     text = "Hi!\nHow are you?\nHere is the link you wanted:\nhttp://www.python.org"
-    html = "<html>\n<head>Git Report</head>\n<body>%s</body>\n</html>" % msg
+    html = "<html>\n<head>Git Report<//head>\n<body>%s<//body>\n<//html>" % msg
     
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
