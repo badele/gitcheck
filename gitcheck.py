@@ -325,8 +325,8 @@ def sendReport(msg):
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
     msg['Subject'] = "Link"
-    msg['From'] = me
-    msg['To'] = you
+    msg['From'] = sender
+    msg['To'] = receivers
     
     # Create the body of the message (a plain-text and an HTML version).
     text = "Hi!\nHow are you?\nHere is the link you wanted:\nhttp://www.python.org"
