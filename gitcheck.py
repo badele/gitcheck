@@ -311,7 +311,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
                     
-    if actionNeeded and email:        
+    if email:        
         sendReport(html.msg)
 
     if actionNeeded and bellOnActionNeeded:
