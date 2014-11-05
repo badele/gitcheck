@@ -16,6 +16,7 @@ from email.mime.text import MIMEText
 from configobj import ConfigObj
 from os.path import expanduser
 import os
+from time import strftime
 
 
 # Class for terminal Color
@@ -31,12 +32,13 @@ class tcolor:
     BELL = "\a"
 
 class html:
-    BELL = "\a"
-    msg = "<ul>"
+    msg = "<ul>\n"
     topull = ""
     topush = ""
     strlocal = ""
     prjname = ""
+    path = ""
+    timestamp = ""
     
     
 # Search all local repositories from current directory
@@ -45,6 +47,7 @@ def searchRepositories(dir=None, depth=None):
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
+    html.path = curdir
     startinglevel = curdir.count(os.sep)
     repo = []
 
@@ -161,53 +164,61 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
             html.strlocal = ""
         
         if email:
-            html.msg += "<li>%s/%s %s %s %s</li>" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
+            html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
             
         else:
             print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
                
-            if verbose:
-                if ischange > 0:
-                    filename = "  |--Local"
-                    print(filename)
-                    for c in changes:
-                        filename = "     |--%s%s%s" % (
-                            tcolor.ORANGE,
-                            c[1],
-                            tcolor.DEFAULT)
-                        print(filename)
-    
-                if branch != "":
-                    remotes = getRemoteRepositories(rep)
-                    for r in remotes:
-                        commits = getLocalToPush(rep, r, branch)
-                        if len(commits) > 0:
-                            rname = "  |--%(r)s" % locals()
-                            print(rname)
-                            for commit in commits:
-                                commit = "     |--%s[To Push]%s %s%s%s" % (
-                                    tcolor.MAGENTA,
-                                    tcolor.DEFAULT,
-                                    tcolor.BLUE,
-                                    commit,
-                                    tcolor.DEFAULT)
-                                print(commit)
-    
-                if branch != "":
-                    remotes = getRemoteRepositories(rep)
-                    for r in remotes:
-                        commits = getRemoteToPull(rep, r, branch)
-                        if len(commits) > 0:
-                            rname = "  |--%(r)s" % locals()
-                            print(rname)
-                            for commit in commits:
-                                commit = "     |--%s[To Pull]%s %s%s%s" % (
-                                    tcolor.MAGENTA,
-                                    tcolor.DEFAULT,
-                                    tcolor.BLUE,
-                                    commit,
-                                    tcolor.DEFAULT)
-                                print(commit)
+        if verbose:
+            if ischange > 0:
+                filename = "  |--Local"
+                if not email: print(filename)
+                html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'                     
+                for c in changes:
+                    filename = "     |--%s%s%s" % (
+                        tcolor.ORANGE,
+                        c[1],
+                        tcolor.DEFAULT)
+                    html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
+                    if not email:print(filename)
+                html.msg += '</ul>\n'
+            if branch != "":
+                remotes = getRemoteRepositories(rep)
+                for r in remotes:
+                    commits = getLocalToPush(rep, r, branch)
+                    if len(commits) > 0:
+                        rname = "  |--%(r)s" % locals()
+                        html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
+                        if not email:print(rname)
+                        for commit in commits:
+                            pcommit = "     |--%s[To Push]%s %s%s%s" % (
+                                tcolor.MAGENTA,
+                                tcolor.DEFAULT,
+                                tcolor.BLUE,
+                                commit,
+                                tcolor.DEFAULT)
+                            html.msg += '<li><b style="color:blue">[To Push] </b>%s</li>\n' % commit
+                            if not email:print(pcommit)
+                        html.msg += '</ul>\n'
+
+            if branch != "":
+                remotes = getRemoteRepositories(rep)
+                for r in remotes:
+                    commits = getRemoteToPull(rep, r, branch)
+                    if len(commits) > 0:
+                        rname = "  |--%(r)s" % locals()
+                        html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
+                        if not email:print(rname)
+                        for commit in commits:
+                            pcommit = "     |--%s[To Pull]%s %s%s%s" % (
+                                tcolor.MAGENTA,
+                                tcolor.DEFAULT,
+                                tcolor.BLUE,
+                                commit,
+                                tcolor.DEFAULT)
+                            html.msg += '<li><b style="color:blue">[To Pull] </b>%s</li>\n' % commit
+                            if not email:print(pcommit)
+                        html.msg += '</ul>\n'
 
     return actionNeeded
 
@@ -302,8 +313,10 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     for r in repo:
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
-                    
-    html.msg += "</ul>"
+    html.timestamp = strftime("%Y-%m-%d %H:%M:%S")                
+    html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
+    
+    
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
     
@@ -317,20 +330,20 @@ def sendReport(content):
     
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
-    msg['Subject'] = "Rapport Gitcheck"
+    msg['Subject'] = "Gitcheck Report (%s)" % (html.path)
     msg['From'] = config['from']
     msg['To'] = config['to']
     
     # Create the body of the message (a plain-text and an HTML version).
-    text = "Rapport Gitcheck\n\n%s" % content
-    html = "<html><head><h1>Gitcheck Report</h1></head><body>%s</body></html>" % content
+    text = "Gitcheck report for %s created on %s\n\n This file can be seen in html only." % (html.path, html.timestamp)
+    htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (html.path,content)
     #Write html file to disk    
     f = open(filepath+'//result.html', 'w')
-    f.write(html) 
+    f.write(htmlcontent) 
     print ("File saved under %s\\result.html" %filepath) 
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
-    part2 = MIMEText(html, 'html')
+    part2 = MIMEText(htmlcontent, 'html')
     
     # Attach parts into message container.
     # According to RFC 2046, the last part of a multipart message, in this case
