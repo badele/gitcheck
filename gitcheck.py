@@ -12,6 +12,7 @@ from subprocess import PIPE, call, Popen
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+import shlex
 
 from configobj import ConfigObj
 from os.path import expanduser
@@ -286,8 +287,9 @@ def getRemoteRepositories(rep):
 
 
 def gitExec(path,cmd):
-    commandToExecute = "git -C \"%s\" %s" % (path,cmd)
-    p = subprocess.Popen(commandToExecute, stdout=PIPE, stderr=PIPE, bufsize=256*1024*1024)
+    commandToExecute = "git -C \"%s\" %s" % (path, cmd)
+    cmdargs = shlex.split(commandToExecute)
+    p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
     output, errors = p.communicate()
     if p.returncode:
         print 'Failed running %s' % commandToExecute
@@ -295,6 +297,7 @@ def gitExec(path,cmd):
     else:
         pass
     return output
+
 
 # Check all git repositories
 def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet, email):
