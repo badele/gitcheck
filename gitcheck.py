@@ -5,10 +5,9 @@ import os
 import re
 import sys
 import getopt
-import fnmatch
 import time
 import subprocess
-from subprocess import PIPE, call, Popen
+from subprocess import PIPE
 import smtplib
 from smtplib import SMTPException
 from email.mime.multipart import MIMEMultipart
@@ -318,13 +317,10 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
             actionNeeded = True
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")                
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
-    
-    
+        
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
-    
-    #return True
-
+        
 def sendReport(content):
     userPath = expanduser('~')
     filepath = r'%s\Documents\.gitcheck' %(userPath)     
@@ -340,7 +336,7 @@ def sendReport(content):
     # Create the body of the message (a plain-text and an HTML version).
     text = "Gitcheck report for %s created on %s\n\n This file can be seen in html only." % (html.path, html.timestamp)
     htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (html.path,content)
-    #Write html file to disk    
+    # Write html file to disk    
     f = open(filepath+'//result.html', 'w')
     f.write(htmlcontent) 
     print ("File saved under %s\\result.html" %filepath) 
@@ -395,7 +391,7 @@ def usage():
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
-    print("  --init-email                         Initialize mail.properties file (has to be modified by user)")
+    print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
 
 def main():
     try:
