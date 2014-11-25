@@ -43,7 +43,7 @@ class html:
     
 # Search all local repositories from current directory
 def searchRepositories(dir=None, depth=None): 
-    print 'Beginning scan... building list of git folders'
+    #DEBUG print 'Beginning scan... building list of git folders'
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
@@ -58,7 +58,7 @@ def searchRepositories(dir=None, depth=None):
                 if d.endswith('.git'):  
                     repo.append(os.path.join(directory, d)[:-5])
     
-    print 'Done'
+    #DEBUG print 'Done'
     return repo
 
 # Check state of a git repository
@@ -311,7 +311,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if shouldClear:
         print(tcolor.RESET)
 
-    print ("Processing repositories... please wait.")
+    #DEBUG print ("Processing repositories... please wait.")
     for r in repo:
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
