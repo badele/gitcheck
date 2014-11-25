@@ -16,16 +16,9 @@ from email.mime.text import MIMEText
 import shlex
 
 from os.path import expanduser
-import os
 from time import strftime
 
-#TODO remplace it by JSON module
-try:
-    configmodule = False
-    from configobj import ConfigObj
-    configmodule = True
-except:
-    pass
+import json
 
 # Class for terminal Color
 class tcolor:
@@ -336,7 +329,7 @@ def sendReport(content):
     userPath = expanduser('~')
     filepath = r'%s\Documents\.gitcheck' %(userPath)     
     filename = filepath + "//mail.properties"    
-    config = ConfigObj(filename)    
+    config = json.load(open(filename))    
     
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
@@ -361,6 +354,7 @@ def sendReport(content):
     msg.attach(part1)
     msg.attach(part2)
     try:
+        print ("Sending email to %s" % config['to'])
         # Send the message via local SMTP server.
         s = smtplib.SMTP(config['smtp'],config['smtp_port'])
         # sendmail function takes 3 arguments: sender's address, recipient's address
@@ -373,20 +367,19 @@ def sendReport(content):
 
 
 def initEmailConfig():
-    config = ConfigObj()
+    
+    config = {'smtp' : 'yourserver',
+              'smtp_port' : 25,
+              'from' : 'from@server.com',
+              'to' : 'to@server.com'
+             }
     userPath = expanduser('~')
     saveFilePath = r'%s\Documents\.gitcheck' %(userPath)
     if not os.path.exists(saveFilePath):
         os.makedirs(saveFilePath)
-    config.filename = saveFilePath+'\mail.properties'
-    #
-    config['smtp'] = 'yourServer'
-    config['smtp_port'] = 25
-    config['from'] = 'from@server.com'
-    config['to'] = 'to@server.com'
-    
-    config.write()
-    print ('Please, modify config file located here : %s') % config.filename
+    filename = saveFilePath+'\mail.properties'
+    json.dump(config, fp=open(filename, 'w'), indent=4)    
+    print ('Please, modify config file located here : %s') % filename
 
        
 def usage():
@@ -457,9 +450,6 @@ def main():
         elif opt in ("-e", "--email"):
             email = True
         elif opt in ("--init-email"):
-            if not configmodule:
-                print "%sPlease install ConfigObj module for send an email%s" % (tcolor.RED, tcolor.DEFAULT)
-                sys.exit(0)
             initEmailConfig()
             sys.exit(0)
         elif opt in ("-h", "--help"):
@@ -483,10 +473,6 @@ def main():
         )
         
         if email:
-            if not configmodule:
-                print "%sPlease install ConfigObj module for send an email%s" % (tcolor.RED, tcolor.DEFAULT)
-                sys.exit(0)
-            print ("Sending email")
             sendReport(html.msg)
 
         if watchInterval:
