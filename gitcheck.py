@@ -10,6 +10,7 @@ import time
 import subprocess
 from subprocess import PIPE, call, Popen
 import smtplib
+from smtplib import SMTPException
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import shlex
@@ -323,7 +324,7 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
     
-    return True
+    #return True
 
 def sendReport(content):
     userPath = expanduser('~')
@@ -353,13 +354,17 @@ def sendReport(content):
     # the HTML message, is best and preferred.
     msg.attach(part1)
     msg.attach(part2)
-    
-    # Send the message via local SMTP server.
-    s = smtplib.SMTP(config['smtp'],config['smtp_port'])
-    # sendmail function takes 3 arguments: sender's address, recipient's address
-    # and message to send - here it is sent as one string.
-    s.sendmail(config['from'], config['to'], msg.as_string())
-    s.quit()
+    try:
+        # Send the message via local SMTP server.
+        s = smtplib.SMTP(config['smtp'],config['smtp_port'])
+        # sendmail function takes 3 arguments: sender's address, recipient's address
+        # and message to send - here it is sent as one string.
+        s.sendmail(config['from'], config['to'], msg.as_string())
+        s.quit()
+    except SMTPException, e:
+        print "Error sending email : %s" % str(e)
+        
+
 
 def initEmailConfig():
     config = ConfigObj()
@@ -468,10 +473,9 @@ def main():
             email
         )
         
-        if gitcheck:
-            if email:        
-                print ("Sending email")
-                sendReport(html.msg)
+        if email:        
+            print ("Sending email")
+            sendReport(html.msg)
 
         if watchInterval:
             time.sleep(watchInterval)
