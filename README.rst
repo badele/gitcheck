@@ -60,7 +60,7 @@ Options
 	-m <maxdepth>, --maxdepth=<maxdepth> 	Limit the depth of repositories search")
     -q, --quiet                          	Display info only when repository needs action")
     -e, --email                          	Send an email with result as html, using mail.properties parameters")
-    --initEmail                          	Initialize mail.properties file (has to be modified by user)")
+    --init-email                          	Initialize mail.properties file (has to be modified by user using JSON format)")
 	
 French version is available here
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
