@@ -7,44 +7,64 @@ import sys
 import getopt
 import fnmatch
 import time
+import subprocess
+from subprocess import PIPE, call, Popen
+import smtplib
+from smtplib import SMTPException
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import shlex
+
+from configobj import ConfigObj
+from os.path import expanduser
+import os
+from time import strftime
+
 
 # Class for terminal Color
 class tcolor:
     DEFAULT = "\033[0m"
     BOLD = "\033[1m"
-    RED = "\033[91m"
-    GREEN = "\033[92m"
-    BLUE = "\033[96m"
-    ORANGE = "\033[93m"
-    MAGENTA = "\033[95m"
+    RED = "\033[0;1;31;40m"
+    GREEN = "\033[0;1;32;40m"
+    BLUE = "\033[0;1;36;40m"
+    ORANGE = "\033[0;1;33;40m"
+    MAGENTA = "\033[0;1;36;40m"
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
+class html:
+    msg = "<ul>\n"
+    topull = ""
+    topush = ""
+    strlocal = ""
+    prjname = ""
+    path = ""
+    timestamp = ""
+    
+    
 # Search all local repositories from current directory
-def searchRepositories(dir=None, depth=None):
-
-    # if trailing slash is in argument of option -d, it won't work -> get rid of it
+def searchRepositories(dir=None, depth=None): 
+    print 'Beginning scan... building list of git folders'
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
+    html.path = curdir
     startinglevel = curdir.count(os.sep)
     repo = []
-    rsearch = re.compile(r'^/?(.*?)/\.git')
-    for root, dirnames, filenames in os.walk(curdir, followlinks=True):
-        level = root.count(os.sep) - startinglevel
-        if depth == None or level <= depth:
-            for dirnames in fnmatch.filter(dirnames, '*.git'):
-                fdir = os.path.join(root, dirnames)
-                fdir = fdir.replace(curdir, '')
-                m = rsearch.match(fdir)
-                if m:
-                    repo.append(os.path.join(curdir, m.group(1)))
 
+    for directory, dirnames, filenames in os.walk(curdir):
+        level = directory.count(os.sep) - startinglevel        
+        if depth == None or level <= depth:          
+            for d in dirnames:
+                if d.endswith('.git'):  
+                    repo.append(os.path.join(directory, d)[:-5])
+    
+    print 'Done'
     return repo
 
-
 # Check state of a git repository
-def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
+def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=False):
     aitem = []
     mitem = []
     ditem = []
@@ -61,6 +81,8 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
     branch = getDefaultBranch(rep)
     topush = ""
     topull = ""
+    html.topush = ""
+    html.topull = ""
     if branch != "":
         remotes = getRemoteRepositories(rep)
         for r in remotes:
@@ -74,6 +96,10 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                     tcolor.DEFAULT,
                     tcolor.BLUE,
                     tcolor.DEFAULT,
+                    count
+                )
+                html.topush += '<b style="color:black">%s</b>[<b style="color:blue">To Push:</b><b style="color:black">%s</b>]' % (
+                    r,
                     count
                 )
 
@@ -90,12 +116,11 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                     tcolor.DEFAULT,
                     count
                 )
+                html.topull += '<b style="color:black">%s</b>[<b style="color:blue">To Pull:</b><b style="color:black">%s</b>]' % (
+                    r,
+                    count
+                )
     if ischange or not quiet:
-        if ischange:
-            color = tcolor.BOLD + tcolor.RED
-        else:
-            color = tcolor.DEFAULT + tcolor.GREEN
-
         # Remove trailing slash from repository/directory name
         if rep[-1:] == '/':
             rep = rep[:-1]
@@ -113,8 +138,16 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
         else:
             repname = rep
 
+        if ischange:
+            color = tcolor.BOLD + tcolor.RED
+            html.prjname = '<b style="color:red">%s</b>' % (repname)
+        else:
+            color = tcolor.DEFAULT + tcolor.GREEN
+            html.prjname = '<b style="color:green">%s</b>' % (repname)
+
         # Print result
         prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
+        
         if len(changes) > 0:
             strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
             strlocal += "%sTo Commit:%s%s" % (
@@ -122,38 +155,53 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                 tcolor.DEFAULT,
                 len(getLocalFilesChange(rep))
             )
-
+            html.strlocal = '<b style="color:orange"> Local</b><b style="color:black">['
+            html.strlocal += "To Commit:%s" % (
+                len(getLocalFilesChange(rep))
+            )
             strlocal += "]"
+            html.strlocal += "]</b>"
         else:
             strlocal = ""
-
-        print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
+            html.strlocal = ""
+        
+        if email:
+            html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
+            
+        else:
+            print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
+               
         if verbose:
             if ischange > 0:
                 filename = "  |--Local"
-                print(filename)
+                if not email: print(filename)
+                html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'                     
                 for c in changes:
                     filename = "     |--%s%s%s" % (
                         tcolor.ORANGE,
                         c[1],
                         tcolor.DEFAULT)
-                    print(filename)
-
+                    html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
+                    if not email:print(filename)
+                html.msg += '</ul>\n'
             if branch != "":
                 remotes = getRemoteRepositories(rep)
                 for r in remotes:
                     commits = getLocalToPush(rep, r, branch)
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
-                        print(rname)
+                        html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
+                        if not email:print(rname)
                         for commit in commits:
-                            commit = "     |--%s[To Push]%s %s%s%s" % (
+                            pcommit = "     |--%s[To Push]%s %s%s%s" % (
                                 tcolor.MAGENTA,
                                 tcolor.DEFAULT,
                                 tcolor.BLUE,
                                 commit,
                                 tcolor.DEFAULT)
-                            print(commit)
+                            html.msg += '<li><b style="color:blue">[To Push] </b>%s</li>\n' % commit
+                            if not email:print(pcommit)
+                        html.msg += '</ul>\n'
 
             if branch != "":
                 remotes = getRemoteRepositories(rep)
@@ -161,15 +209,18 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False):
                     commits = getRemoteToPull(rep, r, branch)
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
-                        print(rname)
+                        html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
+                        if not email:print(rname)
                         for commit in commits:
-                            commit = "     |--%s[To Pull]%s %s%s%s" % (
+                            pcommit = "     |--%s[To Pull]%s %s%s%s" % (
                                 tcolor.MAGENTA,
                                 tcolor.DEFAULT,
                                 tcolor.BLUE,
                                 commit,
                                 tcolor.DEFAULT)
-                            print(commit)
+                            html.msg += '<li><b style="color:blue">[To Pull] </b>%s</li>\n' % commit
+                            if not email:print(pcommit)
+                        html.msg += '</ul>\n'
 
     return actionNeeded
 
@@ -177,8 +228,7 @@ def getLocalFilesChange(rep):
     files = []
     #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
-    result = gitExec(rep, "git status -suno"
-                     % locals())
+    result = gitExec(rep, "status -suno")
 
     lines = result.split('\n')
     for l in lines:
@@ -190,15 +240,14 @@ def getLocalFilesChange(rep):
 
 
 def hasRemoteBranch(rep, remote, branch):
-    result = gitExec(rep, "git branch -r | grep '%(remote)s/%(branch)s'"
-                     % locals())
-    return (result != "")
+    result = gitExec(rep, 'branch -r')
+    return '%s/%s'% (remote,branch) in result
 
 
 def getLocalToPush(rep, remote, branch):
     if not hasRemoteBranch(rep, remote, branch):
         return []
-    result = gitExec(rep, "git log %(remote)s/%(branch)s..HEAD --oneline"
+    result = gitExec(rep, "log %(remote)s/%(branch)s..HEAD --oneline"
                      % locals())
 
     return [x for x in result.split('\n') if x]
@@ -207,20 +256,20 @@ def getLocalToPush(rep, remote, branch):
 def getRemoteToPull(rep, remote, branch):
     if not hasRemoteBranch(rep, remote, branch):
         return []
-    result = gitExec(rep, "git log HEAD..%(remote)s/%(branch)s --oneline"
+    result = gitExec(rep, "log HEAD..%(remote)s/%(branch)s --oneline"
                      % locals())
 
     return [x for x in result.split('\n') if x]
 
 
 def updateRemote(rep):
-    gitExec(rep, "git remote update")
+    gitExec(rep, "remote update")
 
 
 # Get Default branch for repository
 def getDefaultBranch(rep):
     sbranch = re.compile(r'^\* (.*)')
-    gitbranch = gitExec(rep, "git branch | grep '*'"
+    gitbranch = gitExec(rep, "branch"
                         % locals())
 
     branch = ""
@@ -230,24 +279,29 @@ def getDefaultBranch(rep):
 
     return branch
 
-
 def getRemoteRepositories(rep):
-    result = gitExec(rep, "git remote"
+    result = gitExec(rep, "remote"
                      % locals())
 
     remotes = [x for x in result.split('\n') if x]
     return remotes
 
 
-# Custom git command
-def gitExec(rep, command):
-    cmd = "cd \"%(rep)s\" ; %(command)s" % locals()
-    cmd = os.popen(cmd)
-    return cmd.read()
+def gitExec(path,cmd):
+    commandToExecute = "git -C \"%s\" %s" % (path, cmd)
+    cmdargs = shlex.split(commandToExecute)
+    p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
+    output, errors = p.communicate()
+    if p.returncode:
+        print 'Failed running %s' % commandToExecute
+        raise Exception(errors)
+    else:
+        pass
+    return output
 
 
 # Check all git repositories
-def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet):
+def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet, email):
     repo = searchRepositories(searchDir, depth)
     actionNeeded = False
 
@@ -259,14 +313,76 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if shouldClear:
         print(tcolor.RESET)
 
+    print ("Processing repositories... please wait.")
     for r in repo:
-        if checkRepository(r, verbose, ignoreBranch, quiet):
+        if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
-
+    html.timestamp = strftime("%Y-%m-%d %H:%M:%S")                
+    html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
+    
+    
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
+    
+    #return True
+
+def sendReport(content):
+    userPath = expanduser('~')
+    filepath = r'%s\Documents\.gitcheck' %(userPath)     
+    filename = filepath + "//mail.properties"    
+    config = ConfigObj(filename)    
+    
+    # Create message container - the correct MIME type is multipart/alternative.
+    msg = MIMEMultipart('alternative')
+    msg['Subject'] = "Gitcheck Report (%s)" % (html.path)
+    msg['From'] = config['from']
+    msg['To'] = config['to']
+    
+    # Create the body of the message (a plain-text and an HTML version).
+    text = "Gitcheck report for %s created on %s\n\n This file can be seen in html only." % (html.path, html.timestamp)
+    htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (html.path,content)
+    #Write html file to disk    
+    f = open(filepath+'//result.html', 'w')
+    f.write(htmlcontent) 
+    print ("File saved under %s\\result.html" %filepath) 
+    # Record the MIME types of both parts - text/plain and text/html.
+    part1 = MIMEText(text, 'plain')
+    part2 = MIMEText(htmlcontent, 'html')
+    
+    # Attach parts into message container.
+    # According to RFC 2046, the last part of a multipart message, in this case
+    # the HTML message, is best and preferred.
+    msg.attach(part1)
+    msg.attach(part2)
+    try:
+        # Send the message via local SMTP server.
+        s = smtplib.SMTP(config['smtp'],config['smtp_port'])
+        # sendmail function takes 3 arguments: sender's address, recipient's address
+        # and message to send - here it is sent as one string.
+        s.sendmail(config['from'], config['to'], msg.as_string())
+        s.quit()
+    except SMTPException, e:
+        print "Error sending email : %s" % str(e)
+        
 
 
+def initEmailConfig():
+    config = ConfigObj()
+    userPath = expanduser('~')
+    saveFilePath = r'%s\Documents\.gitcheck' %(userPath)
+    if not os.path.exists(saveFilePath):
+        os.makedirs(saveFilePath)
+    config.filename = saveFilePath+'\mail.properties'
+    #
+    config['smtp'] = 'yourServer'
+    config['smtp_port'] = 25
+    config['from'] = 'from@server.com'
+    config['to'] = 'to@server.com'
+    
+    config.write()
+    print ('Please, modify config file located here : %s') % config.filename
+
+       
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
     print("Check multiple git repository in one pass")
@@ -279,14 +395,16 @@ def usage():
     print("  -d <dir>, --dir=<dir>                Search <dir> for repositories")
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
+    print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
+    print("  --initEmail                          Initialize mail.properties file (has to be modified by user)")
 
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrbw:i:d:m:q",
+            "vhrbw:i:d:m:q:e",
             ["verbose", "help", "remote", "bell", "watch=", "ignore-branch=",
-             "dir=", "maxdepth=", "quiet"])
+             "dir=", "maxdepth=", "quiet","email", "initEmail"])
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
@@ -296,6 +414,7 @@ def main():
 
     verbose = False
     checkremote = False
+    email = False
     watchInterval = 0
     bellOnActionNeeded = False
     searchDir = None
@@ -329,6 +448,11 @@ def main():
                 sys.exit(2)
         elif opt in ("-q", "--quiet"):
             quiet = True
+        elif opt in ("-e", "--email"):
+            email = True
+        elif opt in ("--initEmail"):
+            initEmailConfig()
+            sys.exit(0)
         elif opt in ("-h", "--help"):
             usage()
             sys.exit(0)
@@ -345,8 +469,14 @@ def main():
             watchInterval > 0,
             searchDir,
             depth,
-            quiet
+            quiet,
+            email
         )
+        
+        if email:        
+            print ("Sending email")
+            sendReport(html.msg)
+
         if watchInterval:
             time.sleep(watchInterval)
         else:

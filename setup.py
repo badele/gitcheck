@@ -33,7 +33,7 @@ Remove unsupported github tags:
 
 setup(
     name='gitcheck',
-    version='0.3',
+    version='0.3.17',
     description='Check multiple git repository in one pass',
     long_description=rst('README.rst'),
 
@@ -43,7 +43,7 @@ setup(
     url='https://github.com/badele/gitcheck',
     setup_requires=[],
     tests_require=[],
-    py_modules=['gitcheck'],
+    py_modules=['gitcheck',],
     entry_points={
         'console_scripts': ['gitcheck = gitcheck:main']
     }

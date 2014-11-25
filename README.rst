@@ -4,7 +4,7 @@ gitcheck
 If you working in multiples projects, you want can be analyzed in a
 single pass of the changes in your projects. gitcheck is script who scan
 recursive directory to find a git directory and analyse all
-modifications.
+modifications. Result can be sent by email if run as a script on a server for example.
 
 Installation
 ------------
@@ -51,13 +51,17 @@ Options
 
 .. code:: plaintext
 
-    -v, --verbose                     Show files & commits
-    -r, --remote                      also check with the remote
-    -b, --bell                        bell on action needed
-    -w <sec>, --watch <sec>           after displaying, wait <sec> and run again
-    -i <re>, --ignore-branch <re>     ignore branches matching the regex <re>
-    -d <dir>, --dir                   Search <dir> for repositories
-
+    -v, --verbose                     		Show files & commits
+    -r, --remote                      		also check with the remote
+    -b, --bell                        		bell on action needed
+    -w <sec>, --watch <sec>           		after displaying, wait <sec> and run again
+    -i <re>, --ignore-branch <re>     		ignore branches matching the regex <re>
+    -d <dir>, --dir                   		Search <dir> for repositories
+	-m <maxdepth>, --maxdepth=<maxdepth> 	Limit the depth of repositories search")
+    -q, --quiet                          	Display info only when repository needs action")
+    -e, --email                          	Send an email with result as html, using mail.properties parameters")
+    --initEmail                          	Initialize mail.properties file (has to be modified by user)")
+	
 French version is available here
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
