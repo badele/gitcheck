@@ -15,11 +15,17 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import shlex
 
-from configobj import ConfigObj
 from os.path import expanduser
 import os
 from time import strftime
 
+#TODO remplace it by JSON module
+try:
+    configmodule = False
+    from configobj import ConfigObj
+    configmodule = True
+except:
+    pass
 
 # Class for terminal Color
 class tcolor:
@@ -396,7 +402,7 @@ def usage():
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
-    print("  --initEmail                          Initialize mail.properties file (has to be modified by user)")
+    print("  --init-email                         Initialize mail.properties file (has to be modified by user)")
 
 def main():
     try:
@@ -404,7 +410,7 @@ def main():
             sys.argv[1:],
             "vhrbw:i:d:m:q:e",
             ["verbose", "help", "remote", "bell", "watch=", "ignore-branch=",
-             "dir=", "maxdepth=", "quiet","email", "initEmail"])
+             "dir=", "maxdepth=", "quiet","email", "init-email"])
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
@@ -450,7 +456,10 @@ def main():
             quiet = True
         elif opt in ("-e", "--email"):
             email = True
-        elif opt in ("--initEmail"):
+        elif opt in ("--init-email"):
+            if not configmodule:
+                print "%sPlease install ConfigObj module for send an email%s" % (tcolor.RED, tcolor.DEFAULT)
+                sys.exit(0)
             initEmailConfig()
             sys.exit(0)
         elif opt in ("-h", "--help"):
@@ -473,7 +482,10 @@ def main():
             email
         )
         
-        if email:        
+        if email:
+            if not configmodule:
+                print "%sPlease install ConfigObj module for send an email%s" % (tcolor.RED, tcolor.DEFAULT)
+                sys.exit(0)
             print ("Sending email")
             sendReport(html.msg)
 
