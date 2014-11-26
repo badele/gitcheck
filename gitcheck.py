@@ -19,6 +19,19 @@ from time import strftime
 
 import json
 
+# Global vars
+class gblvars:
+    verbose = False
+    checkremote = False
+    email = False
+    watchInterval = 0
+    bellOnActionNeeded = False
+    searchDir = None
+    depth = None
+    quiet = False
+    ignoreBranch = r'^$'  # empty string
+
+
 # Class for terminal Color
 class tcolor:
     DEFAULT = "\033[0m"
@@ -40,10 +53,10 @@ class html:
     path = ""
     timestamp = ""
     
-    
 # Search all local repositories from current directory
-def searchRepositories(dir=None, depth=None): 
+def searchRepositories():
     #DEBUG print 'Beginning scan... building list of git folders'
+    dir = gblvars.searchDir
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
@@ -53,7 +66,7 @@ def searchRepositories(dir=None, depth=None):
 
     for directory, dirnames, filenames in os.walk(curdir):
         level = directory.count(os.sep) - startinglevel        
-        if depth == None or level <= depth:          
+        if gblvars.depth == None or level <= gblvars.depth:
             for d in dirnames:
                 if d.endswith('.git'):  
                     repo.append(os.path.join(directory, d)[:-5])
@@ -62,14 +75,14 @@ def searchRepositories(dir=None, depth=None):
     return repo
 
 # Check state of a git repository
-def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=False):
+def checkRepository(rep):
     aitem = []
     mitem = []
     ditem = []
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
     branch = getDefaultBranch(rep)
-    if re.match(ignoreBranch, branch):
+    if re.match(gblvars.ignoreBranch, branch):
         return False
 
     changes = getLocalFilesChange(rep)
@@ -118,7 +131,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     r,
                     count
                 )
-    if ischange or not quiet:
+    if ischange or not gblvars.quiet:
         # Remove trailing slash from repository/directory name
         if rep[-1:] == '/':
             rep = rep[:-1]
@@ -163,16 +176,16 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
             strlocal = ""
             html.strlocal = ""
         
-        if email:
+        if gblvars.email:
             html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
             
         else:
             print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
                
-        if verbose:
+        if gblvars.verbose:
             if ischange > 0:
                 filename = "  |--Local"
-                if not email: print(filename)
+                if not gblvars.email: print(filename)
                 html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'                     
                 for c in changes:
                     filename = "     |--%s%s%s" % (
@@ -180,7 +193,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                         c[1],
                         tcolor.DEFAULT)
                     html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
-                    if not email:print(filename)
+                    if not gblvars.email:print(filename)
                 html.msg += '</ul>\n'
             if branch != "":
                 remotes = getRemoteRepositories(rep)
@@ -189,7 +202,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
                         html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
-                        if not email:print(rname)
+                        if not gblvars.email:print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Push]%s %s%s%s" % (
                                 tcolor.MAGENTA,
@@ -198,7 +211,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                                 commit,
                                 tcolor.DEFAULT)
                             html.msg += '<li><b style="color:blue">[To Push] </b>%s</li>\n' % commit
-                            if not email:print(pcommit)
+                            if not gblvars.email:print(pcommit)
                         html.msg += '</ul>\n'
 
             if branch != "":
@@ -208,7 +221,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
                         html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
-                        if not email:print(rname)
+                        if not gblvars.email:print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Pull]%s %s%s%s" % (
                                 tcolor.MAGENTA,
@@ -217,7 +230,7 @@ def checkRepository(rep, verbose=False, ignoreBranch=r'^$', quiet=False, email=F
                                 commit,
                                 tcolor.DEFAULT)
                             html.msg += '<li><b style="color:blue">[To Pull] </b>%s</li>\n' % commit
-                            if not email:print(pcommit)
+                            if not gblvars.email:print(pcommit)
                         html.msg += '</ul>\n'
 
     return actionNeeded
@@ -299,26 +312,26 @@ def gitExec(path,cmd):
 
 
 # Check all git repositories
-def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear, searchDir, depth, quiet, email):
-    repo = searchRepositories(searchDir, depth)
+def gitcheck():
+    repo = searchRepositories()
     actionNeeded = False
 
-    if checkremote:
+    if gblvars.checkremote:
         print ("Please wait, refreshing data of remote repositories...")
         for r in repo:
             updateRemote(r)
 
-    if shouldClear:
+    if gblvars.watchInterval > 0:
         print(tcolor.RESET)
 
     #DEBUG print ("Processing repositories... please wait.")
     for r in repo:
-        if checkRepository(r, verbose, ignoreBranch, quiet, email):
+        if checkRepository(r):
             actionNeeded = True
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")                
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
         
-    if actionNeeded and bellOnActionNeeded:
+    if actionNeeded and gblvars.bellOnActionNeeded:
         print(tcolor.BELL)
         
 def sendReport(content):
@@ -407,44 +420,33 @@ def main():
             print e.msg
         sys.exit(2)
 
-    verbose = False
-    checkremote = False
-    email = False
-    watchInterval = 0
-    bellOnActionNeeded = False
-    searchDir = None
-    depth = None
-    quiet = False
-    ignoreBranch = r'^$'  # empty string
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
-            verbose = True
+            gblvars.verbose = True
         elif opt in ("-r", "--remote"):
-            checkremote = True
-        elif opt in ("-r", "--remote"):
-            checkremote = True
+            gblvars.checkremote = True
         elif opt in ("-b", "--bell"):
-            bellOnActionNeeded = True
+            gblvars.bellOnActionNeeded = True
         elif opt in ("-w", "--watch"):
             try:
-                watchInterval = float(arg)
+                gblvars.watchInterval = float(arg)
             except ValueError:
                 print "option %s requires numeric value" % opt
                 sys.exit(2)
         elif opt in ("-i", "--ignore-branch"):
-            ignoreBranch = arg
+            gblvars.ignoreBranch = arg
         elif opt in ("-d", "--dir"):
-            searchDir = arg
+            gblvars.searchDir = arg
         elif opt in ("-m", '--maxdepth'):
             try:
-                depth = int(arg)
+                gblvars.depth = int(arg)
             except ValueError:
                 print "option %s requires int value" % opt
                 sys.exit(2)
         elif opt in ("-q", "--quiet"):
-            quiet = True
+            gblvars.quiet = True
         elif opt in ("-e", "--email"):
-            email = True
+            gblvars.email = True
         elif opt in ("--init-email"):
             initEmailConfig()
             sys.exit(0)
@@ -456,23 +458,13 @@ def main():
 #            sys.exit(2)
 
     while True:
-        gitcheck(
-            verbose,
-            checkremote,
-            ignoreBranch,
-            bellOnActionNeeded,
-            watchInterval > 0,
-            searchDir,
-            depth,
-            quiet,
-            email
-        )
+        gitcheck()
         
-        if email:
+        if gblvars.email:
             sendReport(html.msg)
 
-        if watchInterval:
-            time.sleep(watchInterval)
+        if gblvars.watchInterval > 0:
+            time.sleep(gblvars.watchInterval)
         else:
             break
 
