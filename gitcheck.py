@@ -5,10 +5,9 @@ import os
 import re
 import sys
 import getopt
-import fnmatch
 import time
 import subprocess
-from subprocess import PIPE, call, Popen
+from subprocess import PIPE
 import smtplib
 from smtplib import SMTPException
 from email.mime.multipart import MIMEMultipart
@@ -16,16 +15,9 @@ from email.mime.text import MIMEText
 import shlex
 
 from os.path import expanduser
-import os
 from time import strftime
 
-#TODO remplace it by JSON module
-try:
-    configmodule = False
-    from configobj import ConfigObj
-    configmodule = True
-except:
-    pass
+import json
 
 # Class for terminal Color
 class tcolor:
@@ -51,7 +43,7 @@ class html:
     
 # Search all local repositories from current directory
 def searchRepositories(dir=None, depth=None): 
-    print 'Beginning scan... building list of git folders'
+    #DEBUG print 'Beginning scan... building list of git folders'
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
@@ -66,7 +58,7 @@ def searchRepositories(dir=None, depth=None):
                 if d.endswith('.git'):  
                     repo.append(os.path.join(directory, d)[:-5])
     
-    print 'Done'
+    #DEBUG print 'Done'
     return repo
 
 # Check state of a git repository
@@ -319,24 +311,21 @@ def gitcheck(verbose, checkremote, ignoreBranch, bellOnActionNeeded, shouldClear
     if shouldClear:
         print(tcolor.RESET)
 
-    print ("Processing repositories... please wait.")
+    #DEBUG print ("Processing repositories... please wait.")
     for r in repo:
         if checkRepository(r, verbose, ignoreBranch, quiet, email):
             actionNeeded = True
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")                
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
-    
-    
+        
     if actionNeeded and bellOnActionNeeded:
         print(tcolor.BELL)
-    
-    #return True
-
+        
 def sendReport(content):
     userPath = expanduser('~')
     filepath = r'%s\Documents\.gitcheck' %(userPath)     
     filename = filepath + "//mail.properties"    
-    config = ConfigObj(filename)    
+    config = json.load(open(filename))    
     
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
@@ -347,7 +336,7 @@ def sendReport(content):
     # Create the body of the message (a plain-text and an HTML version).
     text = "Gitcheck report for %s created on %s\n\n This file can be seen in html only." % (html.path, html.timestamp)
     htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (html.path,content)
-    #Write html file to disk    
+    # Write html file to disk    
     f = open(filepath+'//result.html', 'w')
     f.write(htmlcontent) 
     print ("File saved under %s\\result.html" %filepath) 
@@ -361,6 +350,7 @@ def sendReport(content):
     msg.attach(part1)
     msg.attach(part2)
     try:
+        print ("Sending email to %s" % config['to'])
         # Send the message via local SMTP server.
         s = smtplib.SMTP(config['smtp'],config['smtp_port'])
         # sendmail function takes 3 arguments: sender's address, recipient's address
@@ -373,20 +363,19 @@ def sendReport(content):
 
 
 def initEmailConfig():
-    config = ConfigObj()
+    
+    config = {'smtp' : 'yourserver',
+              'smtp_port' : 25,
+              'from' : 'from@server.com',
+              'to' : 'to@server.com'
+             }
     userPath = expanduser('~')
     saveFilePath = r'%s\Documents\.gitcheck' %(userPath)
     if not os.path.exists(saveFilePath):
         os.makedirs(saveFilePath)
-    config.filename = saveFilePath+'\mail.properties'
-    #
-    config['smtp'] = 'yourServer'
-    config['smtp_port'] = 25
-    config['from'] = 'from@server.com'
-    config['to'] = 'to@server.com'
-    
-    config.write()
-    print ('Please, modify config file located here : %s') % config.filename
+    filename = saveFilePath+'\mail.properties'
+    json.dump(config, fp=open(filename, 'w'), indent=4)    
+    print ('Please, modify config file located here : %s') % filename
 
        
 def usage():
@@ -402,7 +391,7 @@ def usage():
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
-    print("  --init-email                         Initialize mail.properties file (has to be modified by user)")
+    print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
 
 def main():
     try:
@@ -457,9 +446,6 @@ def main():
         elif opt in ("-e", "--email"):
             email = True
         elif opt in ("--init-email"):
-            if not configmodule:
-                print "%sPlease install ConfigObj module for send an email%s" % (tcolor.RED, tcolor.DEFAULT)
-                sys.exit(0)
             initEmailConfig()
             sys.exit(0)
         elif opt in ("-h", "--help"):
@@ -483,10 +469,6 @@ def main():
         )
         
         if email:
-            if not configmodule:
-                print "%sPlease install ConfigObj module for send an email%s" % (tcolor.RED, tcolor.DEFAULT)
-                sys.exit(0)
-            print ("Sending email")
             sendReport(html.msg)
 
         if watchInterval:
