@@ -52,6 +52,7 @@ Options
 .. code:: plaintext
 
     -v, --verbose                     		Show files & commits
+    --debug                     		    Show debug message
     -r, --remote                      		also check with the remote
     -b, --bell                        		bell on action needed
     -w <sec>, --watch <sec>           		after displaying, wait <sec> and run again

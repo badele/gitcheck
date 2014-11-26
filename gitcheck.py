@@ -22,6 +22,7 @@ import json
 # Global vars
 class gblvars:
     verbose = False
+    debugmod = False
     checkremote = False
     email = False
     watchInterval = 0
@@ -52,10 +53,14 @@ class html:
     prjname = ""
     path = ""
     timestamp = ""
-    
+
+def showDebug(mess, level='info'):
+    if gblvars.debugmod:
+        print mess
+
 # Search all local repositories from current directory
 def searchRepositories():
-    #DEBUG print 'Beginning scan... building list of git folders'
+    showDebug('Beginning scan... building list of git folders')
     dir = gblvars.searchDir
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
@@ -71,7 +76,7 @@ def searchRepositories():
                 if d.endswith('.git'):  
                     repo.append(os.path.join(directory, d)[:-5])
     
-    #DEBUG print 'Done'
+    showDebug('Done')
     return repo
 
 # Check state of a git repository
@@ -324,7 +329,7 @@ def gitcheck():
     if gblvars.watchInterval > 0:
         print(tcolor.RESET)
 
-    #DEBUG print ("Processing repositories... please wait.")
+    showDebug("Processing repositories... please wait.")
     for r in repo:
         if checkRepository(r):
             actionNeeded = True
@@ -396,6 +401,7 @@ def usage():
     print("Check multiple git repository in one pass")
     print("== Common options ==")
     print("  -v, --verbose                        Show files & commits")
+    print("  --debug                              Show debug message")
     print("  -r, --remote                         force remote update(slow)")
     print("  -b, --bell                           bell on action needed")
     print("  -w <sec>, --watch=<sec>              after displaying, wait <sec> and run again")
@@ -406,13 +412,17 @@ def usage():
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
     print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
 
+
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
             "vhrbw:i:d:m:q:e",
-            ["verbose", "help", "remote", "bell", "watch=", "ignore-branch=",
-             "dir=", "maxdepth=", "quiet","email", "init-email"])
+            [
+                "verbose", "debug", "help", "remote", "bell", "watch=", "ignore-branch=",
+                "dir=", "maxdepth=", "quiet", "email", "init-email"
+            ]
+        )
     except getopt.GetoptError, e:
         if e.opt == 'w' and 'requires argument' in e.msg:
             print "Please indicate nb seconds for refresh ex: gitcheck -w10"
@@ -423,6 +433,8 @@ def main():
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
             gblvars.verbose = True
+        elif opt in ("--debug"):
+            gblvars.debugmod = True
         elif opt in ("-r", "--remote"):
             gblvars.checkremote = True
         elif opt in ("-b", "--bell"):
