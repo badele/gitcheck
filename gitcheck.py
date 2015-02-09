@@ -65,6 +65,8 @@ def searchRepositories():
     if dir != None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
+    showDebug("  Scan git repositories from %s" % curdir)
+
     html.path = curdir
     startinglevel = curdir.count(os.sep)
     repo = []
@@ -74,7 +76,9 @@ def searchRepositories():
         if gblvars.depth == None or level <= gblvars.depth:
             for d in dirnames:
                 if d.endswith('.git'):  
-                    repo.append(os.path.join(directory, d)[:-5])
+                    dirproject = os.path.join(directory, d)[:-5]
+                    showDebug("  Add %s reprository" % dirproject)
+                    repo.append(dirproject)
     
     showDebug('Done')
     return repo
@@ -306,6 +310,7 @@ def getRemoteRepositories(rep):
 def gitExec(path,cmd):
     commandToExecute = "git -C \"%s\" %s" % (path, cmd)
     cmdargs = shlex.split(commandToExecute)
+    showDebug("EXECUTE GIT COMMAND '%s'" % cmdargs)
     p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
     output, errors = p.communicate()
     if p.returncode:
