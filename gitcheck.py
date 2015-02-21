@@ -1,5 +1,6 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
+from __future__ import unicode_literals, absolute_import, division, print_function
 
 import os
 import re
@@ -56,7 +57,7 @@ class html:
 
 def showDebug(mess, level='info'):
     if gblvars.debugmod:
-        print mess
+        print(mess)
 
 # Search all local repositories from current directory
 def searchRepositories():
@@ -314,11 +315,9 @@ def gitExec(path,cmd):
     p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
     output, errors = p.communicate()
     if p.returncode:
-        print 'Failed running %s' % commandToExecute
+        print('Failed running %s' % commandToExecute)
         raise Exception(errors)
-    else:
-        pass
-    return output
+    return output.decode('utf-8')
 
 
 # Check all git repositories
@@ -380,8 +379,8 @@ def sendReport(content):
         # and message to send - here it is sent as one string.
         s.sendmail(config['from'], config['to'], msg.as_string())
         s.quit()
-    except SMTPException, e:
-        print "Error sending email : %s" % str(e)
+    except SMTPException as e:
+        print("Error sending email : %s" % str(e))
         
 
 
@@ -428,11 +427,11 @@ def main():
                 "dir=", "maxdepth=", "quiet", "email", "init-email"
             ]
         )
-    except getopt.GetoptError, e:
+    except getopt.GetoptError as e:
         if e.opt == 'w' and 'requires argument' in e.msg:
-            print "Please indicate nb seconds for refresh ex: gitcheck -w10"
+            print("Please indicate nb seconds for refresh ex: gitcheck -w10")
         else:
-            print e.msg
+            print(e.msg)
         sys.exit(2)
 
     for opt, arg in opts:
@@ -448,7 +447,7 @@ def main():
             try:
                 gblvars.watchInterval = float(arg)
             except ValueError:
-                print "option %s requires numeric value" % opt
+                print("option %s requires numeric value" % opt)
                 sys.exit(2)
         elif opt in ("-i", "--ignore-branch"):
             gblvars.ignoreBranch = arg
@@ -458,7 +457,7 @@ def main():
             try:
                 gblvars.depth = int(arg)
             except ValueError:
-                print "option %s requires int value" % opt
+                print("option %s requires int value" % opt)
                 sys.exit(2)
         elif opt in ("-q", "--quiet"):
             gblvars.quiet = True
