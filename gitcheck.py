@@ -199,7 +199,9 @@ def checkRepository(rep):
                 if not gblvars.email: print(filename)
                 html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'                     
                 for c in changes:
-                    filename = "     |--%s%s%s" % (
+                    filename = "     |--%s%s%s %s%s" % (
+                        tcolor.MAGENTA,
+                        c[0],
                         tcolor.ORANGE,
                         c[1],
                         tcolor.DEFAULT)
