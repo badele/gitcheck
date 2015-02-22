@@ -24,6 +24,7 @@ class gblvars:
     verbose = False
     debugmod = False
     checkremote = False
+    checkUntracked = False
     email = False
     watchInterval = 0
     bellOnActionNeeded = False
@@ -248,7 +249,8 @@ def getLocalFilesChange(rep):
     files = []
     #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
-    result = gitExec(rep, "status -suno")
+    onlyTrackedArg = "" if gblvars.checkUntracked else "uno"
+    result = gitExec(rep, "status -s" + onlyTrackedArg) 
 
     lines = result.split('\n')
     for l in lines:
@@ -408,6 +410,7 @@ def usage():
     print("  -v, --verbose                        Show files & commits")
     print("  --debug                              Show debug message")
     print("  -r, --remote                         force remote update(slow)")
+    print("  -u, --untracked                      Show untracked files")
     print("  -b, --bell                           bell on action needed")
     print("  -w <sec>, --watch=<sec>              after displaying, wait <sec> and run again")
     print("  -i <re>, --ignore-branch=<re>        ignore branches matching the regex <re>")
@@ -422,9 +425,9 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrbw:i:d:m:q:e",
+            "vhrubw:i:d:m:q:e",
             [
-                "verbose", "debug", "help", "remote", "bell", "watch=", "ignore-branch=",
+                "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
                 "dir=", "maxdepth=", "quiet", "email", "init-email"
             ]
         )
@@ -442,6 +445,8 @@ def main():
             gblvars.debugmod = True
         elif opt in ("-r", "--remote"):
             gblvars.checkremote = True
+        elif opt in ("-u", "--untracked"):
+            gblvars.checkUntracked = True
         elif opt in ("-b", "--bell"):
             gblvars.bellOnActionNeeded = True
         elif opt in ("-w", "--watch"):
