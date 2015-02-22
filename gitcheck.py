@@ -171,14 +171,15 @@ def checkRepository(rep):
         
         if len(changes) > 0:
             strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
+            lenFilesChnaged = len(getLocalFilesChange(rep))
             strlocal += "%sTo Commit:%s%s" % (
                 tcolor.BLUE,
                 tcolor.DEFAULT,
-                len(getLocalFilesChange(rep))
+                lenFilesChnaged
             )
             html.strlocal = '<b style="color:orange"> Local</b><b style="color:black">['
             html.strlocal += "To Commit:%s" % (
-                len(getLocalFilesChange(rep))
+                lenFilesChnaged
             )
             strlocal += "]"
             html.strlocal += "]</b>"
