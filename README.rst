@@ -1,10 +1,12 @@
 gitcheck
 ========
 
-If you working in multiples projects, you want can be analyzed in a
-single pass of the changes in your projects. gitcheck is script who scan
-recursive directory to find a git directory and analyse all
-modifications. Result can be sent by email if run as a script on a server for example.
+When working simultaneously on several git repositories, it is easy to
+loose the overview on the advancement of your work.  This is why I
+decided to write gitcheck, a tool which reports the status of the
+repositories it finds in a file tree.  This report can of course be
+displayed on the terminal but also be sent by email.
+
 
 Installation
 ------------
@@ -13,38 +15,41 @@ Installation
 
     pip install git+git://github.com/badele/gitcheck.git
 
-Examples utilizations
----------------------
 
-Simple version
-~~~~~~~~~~~~~~
+Examples
+--------
 
-In simple version, it show for each repositories if you have
-modification not committed and or commits not pushed.
+Simple report
+~~~~~~~~~~~~~
+
+In a simple invocation, gitcheck shows for each repository found in
+the file tree rooted at the current working directory if they have
+changes to be committed or commits to be pushed.
 
 .. code:: bash
 
     >gitcheck.py
 
 .. figure:: http://bruno.adele.im/static/gitcheck.png
-   :alt: Gitcheck simple
+   :alt: Gitcheck simple report
 
-   Gitcheck simple
+   Gitcheck simple report
 
-Verbose version
+Detailed report
 ~~~~~~~~~~~~~~~
 
-Substantially identical to the previous version, in bonus, it print who
-files modified and commits not pushed
+This invocation is substantially identical to the previous one, but
+the generated report also enumerates modified files and pending
+commits.
 
 .. code:: bash
 
-    >gitcheck.py -v 
+    >gitcheck.py -v
 
 .. figure:: http://bruno.adele.im/static/gitcheck_verbose.png
-   :alt: Gitcheck verbose
+   :alt: Gitcheck detailed report
 
-   Gitcheck verbose
+   Gitcheck detailed report
 
 Options
 ~~~~~~~
@@ -63,7 +68,9 @@ Options
     -e, --email                          	Send an email with result as html, using mail.properties parameters")
     --init-email                          	Initialize mail.properties file (has to be modified by user using JSON format)")
 	
-French version is available here
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+French version
+~~~~~~~~~~~~~~
+
+A French version of this document is available here:
 http://bruno.adele.im/projets/gitcheck/
