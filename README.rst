@@ -11,7 +11,7 @@ Installation
 
 ::
 
-    pip install git+git://github.com/badele/gitcheck.git
+    pip install gitcheck
 
 Examples utilizations
 ---------------------
@@ -24,7 +24,7 @@ modification not committed and or commits not pushed.
 
 .. code:: bash
 
-    >gitcheck.py
+    $ gitcheck
 
 .. figure:: http://bruno.adele.im/static/gitcheck.png
    :alt: Gitcheck simple
@@ -39,7 +39,7 @@ files modified and commits not pushed
 
 .. code:: bash
 
-    >gitcheck.py -v 
+    $ gitcheck -v
 
 .. figure:: http://bruno.adele.im/static/gitcheck_verbose.png
    :alt: Gitcheck verbose
@@ -49,7 +49,7 @@ files modified and commits not pushed
 Options
 ~~~~~~~
 
-.. code:: plaintext
+::
 
     -v, --verbose                     		Show files & commits
     --debug                     		    Show debug message
@@ -58,11 +58,11 @@ Options
     -w <sec>, --watch <sec>           		after displaying, wait <sec> and run again
     -i <re>, --ignore-branch <re>     		ignore branches matching the regex <re>
     -d <dir>, --dir                   		Search <dir> for repositories
-	-m <maxdepth>, --maxdepth=<maxdepth> 	Limit the depth of repositories search")
+    -m <maxdepth>, --maxdepth=<maxdepth> 	Limit the depth of repositories search")
     -q, --quiet                          	Display info only when repository needs action")
     -e, --email                          	Send an email with result as html, using mail.properties parameters")
     --init-email                          	Initialize mail.properties file (has to be modified by user using JSON format)")
-	
+
 French version is available here
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
