@@ -25,6 +25,7 @@ class gblvars:
     verbose = False
     debugmod = False
     checkremote = False
+    checkUntracked = False
     email = False
     watchInterval = 0
     bellOnActionNeeded = False
@@ -171,14 +172,15 @@ def checkRepository(rep):
         
         if len(changes) > 0:
             strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
+            lenFilesChnaged = len(getLocalFilesChange(rep))
             strlocal += "%sTo Commit:%s%s" % (
                 tcolor.BLUE,
                 tcolor.DEFAULT,
-                len(getLocalFilesChange(rep))
+                lenFilesChnaged
             )
             html.strlocal = '<b style="color:orange"> Local</b><b style="color:black">['
             html.strlocal += "To Commit:%s" % (
-                len(getLocalFilesChange(rep))
+                lenFilesChnaged
             )
             strlocal += "]"
             html.strlocal += "]</b>"
@@ -198,7 +200,9 @@ def checkRepository(rep):
                 if not gblvars.email: print(filename)
                 html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'                     
                 for c in changes:
-                    filename = "     |--%s%s%s" % (
+                    filename = "     |--%s%s%s %s%s" % (
+                        tcolor.MAGENTA,
+                        c[0],
                         tcolor.ORANGE,
                         c[1],
                         tcolor.DEFAULT)
@@ -249,7 +253,8 @@ def getLocalFilesChange(rep):
     files = []
     #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
-    result = gitExec(rep, "status -suno")
+    onlyTrackedArg = "" if gblvars.checkUntracked else "uno"
+    result = gitExec(rep, "status -s" + onlyTrackedArg) 
 
     lines = result.split('\n')
     for l in lines:
@@ -407,6 +412,7 @@ def usage():
     print("  -v, --verbose                        Show files & commits")
     print("  --debug                              Show debug message")
     print("  -r, --remote                         force remote update(slow)")
+    print("  -u, --untracked                      Show untracked files")
     print("  -b, --bell                           bell on action needed")
     print("  -w <sec>, --watch=<sec>              after displaying, wait <sec> and run again")
     print("  -i <re>, --ignore-branch=<re>        ignore branches matching the regex <re>")
@@ -421,9 +427,9 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrbw:i:d:m:q:e",
+            "vhrubw:i:d:m:q:e",
             [
-                "verbose", "debug", "help", "remote", "bell", "watch=", "ignore-branch=",
+                "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
                 "dir=", "maxdepth=", "quiet", "email", "init-email"
             ]
         )
@@ -441,6 +447,8 @@ def main():
             gblvars.debugmod = True
         elif opt in ("-r", "--remote"):
             gblvars.checkremote = True
+        elif opt in ("-u", "--untracked"):
+            gblvars.checkUntracked = True
         elif opt in ("-b", "--bell"):
             gblvars.bellOnActionNeeded = True
         elif opt in ("-w", "--watch"):
