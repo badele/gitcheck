@@ -402,7 +402,7 @@ def initEmailConfig():
         os.makedirs(saveFilePath)
     filename = saveFilePath+'\mail.properties'
     json.dump(config, fp=open(filename, 'w'), indent=4)    
-    print ('Please, modify config file located here : %s') % filename
+    print('Please, modify config file located here : %s' % filename) 
 
        
 def usage():
