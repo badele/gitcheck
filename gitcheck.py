@@ -79,7 +79,7 @@ def searchRepositories():
             for d in dirnames:
                 if d.endswith('.git'):  
                     dirproject = os.path.join(directory, d)[:-5]
-                    showDebug("  Add %s reprository" % dirproject)
+                    showDebug("  Add %s repository" % dirproject)
                     repo.append(dirproject)
     
     showDebug('Done')
