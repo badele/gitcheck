@@ -82,6 +82,7 @@ def searchRepositories():
                     showDebug("  Add %s repository" % dirproject)
                     repo.append(dirproject)
 
+    repo.sort()
     showDebug('Done')
     return repo
 
