@@ -294,12 +294,12 @@ def updateRemote(rep):
 
 # Get Default branch for repository
 def getDefaultBranch(rep):
-    sbranch = re.compile(r'^\* (.*)')
+    sbranch = re.compile(r'^\* (.*)', flags=re.MULTILINE)
     gitbranch = gitExec(rep, "branch"
                         % locals())
 
     branch = ""
-    m = sbranch.match(gitbranch)
+    m = sbranch.search(gitbranch)
     if m:
         branch = m.group(1)
 
