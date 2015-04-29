@@ -43,7 +43,7 @@ class tcolor:
     GREEN = "\033[0;1;32;40m"
     BLUE = "\033[0;1;36;40m"
     ORANGE = "\033[0;1;33;40m"
-    MAGENTA = "\033[0;1;36;40m"
+    MAGENTA = "\033[0;1;35;40m"
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
