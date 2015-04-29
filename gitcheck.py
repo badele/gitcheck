@@ -332,8 +332,8 @@ def gitcheck():
     actionNeeded = False
 
     if gblvars.checkremote:
-        print ("Please wait, refreshing data of remote repositories...")
         for r in repo:
+            print ("Updating %s remotes..." % r)
             updateRemote(r)
 
     if gblvars.watchInterval > 0:
@@ -412,7 +412,7 @@ def usage():
     print("== Common options ==")
     print("  -v, --verbose                        Show files & commits")
     print("  --debug                              Show debug message")
-    print("  -r, --remote                         force remote update(slow)")
+    print("  -r, --remote                         force remote update (slow)")
     print("  -u, --untracked                      Show untracked files")
     print("  -b, --bell                           bell on action needed")
     print("  -w <sec>, --watch=<sec>              after displaying, wait <sec> and run again")
