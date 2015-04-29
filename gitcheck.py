@@ -108,6 +108,7 @@ def checkRepository(rep):
     html.topull = ""
     if branch != "":
         remotes = getRemoteRepositories(rep)
+        hasremotes = bool(remotes)
         for r in remotes:
             count = len(getLocalToPush(rep, r, branch))
             ischange = ischange or (count > 0)
@@ -164,6 +165,9 @@ def checkRepository(rep):
         if ischange:
             color = tcolor.BOLD + tcolor.RED
             html.prjname = '<b style="color:red">%s</b>' % (repname)
+        elif not hasremotes:
+            color = tcolor.BOLD + tcolor.MAGENTA
+            html.prjname = '<b style="color:magenta">%s</b>' % (repname)
         else:
             color = tcolor.DEFAULT + tcolor.GREEN
             html.prjname = '<b style="color:green">%s</b>' % (repname)
