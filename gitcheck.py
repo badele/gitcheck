@@ -76,11 +76,9 @@ def searchRepositories():
     for directory, dirnames, filenames in os.walk(curdir):
         level = directory.count(os.sep) - startinglevel
         if gblvars.depth == None or level <= gblvars.depth:
-            for d in dirnames:
-                if d.endswith('.git'):
-                    dirproject = os.path.join(directory, d)[:-5]
-                    showDebug("  Add %s repository" % dirproject)
-                    repo.append(dirproject)
+            if '.git' in dirnames:
+                showDebug("  Add %s repository" % directory)
+                repo.append(directory)
 
     repo.sort()
     showDebug('Done')
