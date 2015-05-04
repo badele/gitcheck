@@ -330,6 +330,8 @@ def gitExec(path,cmd):
 
 # Check all git repositories
 def gitcheck():
+    showDebug("Global Vars: %s" % vars(gblvars))
+
     repo = searchRepositories()
     actionNeeded = False
 
