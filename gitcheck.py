@@ -43,7 +43,7 @@ class tcolor:
     GREEN = "\033[0;1;32;40m"
     BLUE = "\033[0;1;36;40m"
     ORANGE = "\033[0;1;33;40m"
-    MAGENTA = "\033[0;1;36;40m"
+    MAGENTA = "\033[0;1;35;40m"
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
@@ -74,14 +74,15 @@ def searchRepositories():
     repo = []
 
     for directory, dirnames, filenames in os.walk(curdir):
-        level = directory.count(os.sep) - startinglevel        
+        level = directory.count(os.sep) - startinglevel
         if gblvars.depth == None or level <= gblvars.depth:
             for d in dirnames:
-                if d.endswith('.git'):  
+                if d.endswith('.git'):
                     dirproject = os.path.join(directory, d)[:-5]
-                    showDebug("  Add %s reprository" % dirproject)
+                    showDebug("  Add %s repository" % dirproject)
                     repo.append(dirproject)
-    
+
+    repo.sort()
     showDebug('Done')
     return repo
 
@@ -107,6 +108,7 @@ def checkRepository(rep):
     html.topull = ""
     if branch != "":
         remotes = getRemoteRepositories(rep)
+        hasremotes = bool(remotes)
         for r in remotes:
             count = len(getLocalToPush(rep, r, branch))
             ischange = ischange or (count > 0)
@@ -163,13 +165,16 @@ def checkRepository(rep):
         if ischange:
             color = tcolor.BOLD + tcolor.RED
             html.prjname = '<b style="color:red">%s</b>' % (repname)
+        elif not hasremotes:
+            color = tcolor.BOLD + tcolor.MAGENTA
+            html.prjname = '<b style="color:magenta">%s</b>' % (repname)
         else:
             color = tcolor.DEFAULT + tcolor.GREEN
             html.prjname = '<b style="color:green">%s</b>' % (repname)
 
         # Print result
         prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
-        
+
         if len(changes) > 0:
             strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
             lenFilesChnaged = len(getLocalFilesChange(rep))
@@ -187,18 +192,18 @@ def checkRepository(rep):
         else:
             strlocal = ""
             html.strlocal = ""
-        
+
         if gblvars.email:
-            html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)        
-            
+            html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)
+
         else:
             print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
-               
+
         if gblvars.verbose:
             if ischange > 0:
                 filename = "  |--Local"
                 if not gblvars.email: print(filename)
-                html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'                     
+                html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'
                 for c in changes:
                     filename = "     |--%s%s%s %s%s" % (
                         tcolor.MAGENTA,
@@ -254,7 +259,7 @@ def getLocalFilesChange(rep):
     #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
     onlyTrackedArg = "" if gblvars.checkUntracked else "uno"
-    result = gitExec(rep, "status -s" + onlyTrackedArg) 
+    result = gitExec(rep, "status -s" + onlyTrackedArg)
 
     lines = result.split('\n')
     for l in lines:
@@ -294,12 +299,12 @@ def updateRemote(rep):
 
 # Get Default branch for repository
 def getDefaultBranch(rep):
-    sbranch = re.compile(r'^\* (.*)')
+    sbranch = re.compile(r'^\* (.*)', flags=re.MULTILINE)
     gitbranch = gitExec(rep, "branch"
                         % locals())
 
     branch = ""
-    m = sbranch.match(gitbranch)
+    m = sbranch.search(gitbranch)
     if m:
         branch = m.group(1)
 
@@ -331,8 +336,8 @@ def gitcheck():
     actionNeeded = False
 
     if gblvars.checkremote:
-        print ("Please wait, refreshing data of remote repositories...")
         for r in repo:
+            print ("Updating %s remotes..." % r)
             updateRemote(r)
 
     if gblvars.watchInterval > 0:
@@ -342,35 +347,35 @@ def gitcheck():
     for r in repo:
         if checkRepository(r):
             actionNeeded = True
-    html.timestamp = strftime("%Y-%m-%d %H:%M:%S")                
+    html.timestamp = strftime("%Y-%m-%d %H:%M:%S")
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
-        
+
     if actionNeeded and gblvars.bellOnActionNeeded:
         print(tcolor.BELL)
-        
+
 def sendReport(content):
     userPath = expanduser('~')
-    filepath = r'%s\Documents\.gitcheck' %(userPath)     
-    filename = filepath + "//mail.properties"    
-    config = json.load(open(filename))    
-    
+    filepath = r'%s\Documents\.gitcheck' %(userPath)
+    filename = filepath + "//mail.properties"
+    config = json.load(open(filename))
+
     # Create message container - the correct MIME type is multipart/alternative.
     msg = MIMEMultipart('alternative')
     msg['Subject'] = "Gitcheck Report (%s)" % (html.path)
     msg['From'] = config['from']
     msg['To'] = config['to']
-    
+
     # Create the body of the message (a plain-text and an HTML version).
     text = "Gitcheck report for %s created on %s\n\n This file can be seen in html only." % (html.path, html.timestamp)
     htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (html.path,content)
-    # Write html file to disk    
+    # Write html file to disk
     f = open(filepath+'//result.html', 'w')
-    f.write(htmlcontent) 
-    print ("File saved under %s\\result.html" %filepath) 
+    f.write(htmlcontent)
+    print ("File saved under %s\\result.html" %filepath)
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(htmlcontent, 'html')
-    
+
     # Attach parts into message container.
     # According to RFC 2046, the last part of a multipart message, in this case
     # the HTML message, is best and preferred.
@@ -386,11 +391,11 @@ def sendReport(content):
         s.quit()
     except SMTPException as e:
         print("Error sending email : %s" % str(e))
-        
+
 
 
 def initEmailConfig():
-    
+
     config = {'smtp' : 'yourserver',
               'smtp_port' : 25,
               'from' : 'from@server.com',
@@ -401,17 +406,17 @@ def initEmailConfig():
     if not os.path.exists(saveFilePath):
         os.makedirs(saveFilePath)
     filename = saveFilePath+'\mail.properties'
-    json.dump(config, fp=open(filename, 'w'), indent=4)    
-    print('Please, modify config file located here : %s' % filename) 
+    json.dump(config, fp=open(filename, 'w'), indent=4)
+    print('Please, modify config file located here : %s' % filename)
 
-       
+
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
     print("Check multiple git repository in one pass")
     print("== Common options ==")
     print("  -v, --verbose                        Show files & commits")
     print("  --debug                              Show debug message")
-    print("  -r, --remote                         force remote update(slow)")
+    print("  -r, --remote                         force remote update (slow)")
     print("  -u, --untracked                      Show untracked files")
     print("  -b, --bell                           bell on action needed")
     print("  -w <sec>, --watch=<sec>              after displaying, wait <sec> and run again")
@@ -483,7 +488,7 @@ def main():
 
     while True:
         gitcheck()
-        
+
         if gblvars.email:
             sendReport(html.msg)
 
