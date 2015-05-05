@@ -20,6 +20,7 @@ from time import strftime
 
 import json
 
+
 # Global vars
 class gblvars:
     verbose = False
@@ -47,6 +48,7 @@ class tcolor:
     RESET = "\033[2J\033[H"
     BELL = "\a"
 
+
 class html:
     msg = "<ul>\n"
     topull = ""
@@ -56,15 +58,17 @@ class html:
     path = ""
     timestamp = ""
 
+
 def showDebug(mess, level='info'):
     if gblvars.debugmod:
         print(mess)
+
 
 # Search all local repositories from current directory
 def searchRepositories():
     showDebug('Beginning scan... building list of git folders')
     dir = gblvars.searchDir
-    if dir != None and dir[-1:] == '/':
+    if dir is not None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
     showDebug("  Scan git repositories from %s" % curdir)
@@ -75,7 +79,7 @@ def searchRepositories():
 
     for directory, dirnames, filenames in os.walk(curdir):
         level = directory.count(os.sep) - startinglevel
-        if gblvars.depth == None or level <= gblvars.depth:
+        if gblvars.depth is None or level <= gblvars.depth:
             if '.git' in dirnames:
                 showDebug("  Add %s repository" % directory)
                 repo.append(directory)
@@ -83,6 +87,7 @@ def searchRepositories():
     repo.sort()
     showDebug('Done')
     return repo
+
 
 # Check state of a git repository
 def checkRepository(rep):
@@ -97,7 +102,7 @@ def checkRepository(rep):
 
     changes = getLocalFilesChange(rep)
     ischange = len(changes) > 0
-    actionNeeded = False # actionNeeded is branch push/pull, not local file change.
+    actionNeeded = False  # actionNeeded is branch push/pull, not local file change.
 
     branch = getDefaultBranch(rep)
     topush = ""
@@ -155,7 +160,7 @@ def checkRepository(rep):
                 repname = tail
         # Case 2: script was started in a directory with possible subdirs that contain git repos
         elif rep.find(os.path.abspath(os.getcwd())) == 0:
-            repname = rep[len(os.path.abspath(os.getcwd()))+1:]
+            repname = rep[len(os.path.abspath(os.getcwd())) + 1:]
         # Case 3: script was started with -d and above cases do not apply
         else:
             repname = rep
@@ -210,7 +215,7 @@ def checkRepository(rep):
                         c[1],
                         tcolor.DEFAULT)
                     html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
-                    if not gblvars.email:print(filename)
+                    if not gblvars.email: print(filename)
                 html.msg += '</ul>\n'
             if branch != "":
                 remotes = getRemoteRepositories(rep)
@@ -219,7 +224,7 @@ def checkRepository(rep):
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
                         html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
-                        if not gblvars.email:print(rname)
+                        if not gblvars.email: print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Push]%s %s%s%s" % (
                                 tcolor.MAGENTA,
@@ -228,7 +233,7 @@ def checkRepository(rep):
                                 commit,
                                 tcolor.DEFAULT)
                             html.msg += '<li><b style="color:blue">[To Push] </b>%s</li>\n' % commit
-                            if not gblvars.email:print(pcommit)
+                            if not gblvars.email: print(pcommit)
                         html.msg += '</ul>\n'
 
             if branch != "":
@@ -238,7 +243,7 @@ def checkRepository(rep):
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
                         html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
-                        if not gblvars.email:print(rname)
+                        if not gblvars.email: print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Pull]%s %s%s%s" % (
                                 tcolor.MAGENTA,
@@ -247,10 +252,11 @@ def checkRepository(rep):
                                 commit,
                                 tcolor.DEFAULT)
                             html.msg += '<li><b style="color:blue">[To Pull] </b>%s</li>\n' % commit
-                            if not gblvars.email:print(pcommit)
+                            if not gblvars.email: print(pcommit)
                         html.msg += '</ul>\n'
 
     return actionNeeded
+
 
 def getLocalFilesChange(rep):
     files = []
@@ -270,7 +276,7 @@ def getLocalFilesChange(rep):
 
 def hasRemoteBranch(rep, remote, branch):
     result = gitExec(rep, 'branch -r')
-    return '%s/%s'% (remote,branch) in result
+    return '%s/%s' % (remote, branch) in result
 
 
 def getLocalToPush(rep, remote, branch):
@@ -308,6 +314,7 @@ def getDefaultBranch(rep):
 
     return branch
 
+
 def getRemoteRepositories(rep):
     result = gitExec(rep, "remote"
                      % locals())
@@ -316,7 +323,7 @@ def getRemoteRepositories(rep):
     return remotes
 
 
-def gitExec(path,cmd):
+def gitExec(path, cmd):
     commandToExecute = "git -C \"%s\" %s" % (path, cmd)
     cmdargs = shlex.split(commandToExecute)
     showDebug("EXECUTE GIT COMMAND '%s'" % cmdargs)
@@ -353,9 +360,10 @@ def gitcheck():
     if actionNeeded and gblvars.bellOnActionNeeded:
         print(tcolor.BELL)
 
+
 def sendReport(content):
     userPath = expanduser('~')
-    filepath = r'%s\Documents\.gitcheck' %(userPath)
+    filepath = r'%s\Documents\.gitcheck' % userPath
     filename = filepath + "//mail.properties"
     config = json.load(open(filename))
 
@@ -367,11 +375,13 @@ def sendReport(content):
 
     # Create the body of the message (a plain-text and an HTML version).
     text = "Gitcheck report for %s created on %s\n\n This file can be seen in html only." % (html.path, html.timestamp)
-    htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (html.path,content)
+    htmlcontent = "<html>\n<head>\n<h1>Gitcheck Report</h1>\n<h2>%s</h2>\n</head>\n<body>\n<p>%s</p>\n</body>\n</html>" % (
+        html.path, content
+    )
     # Write html file to disk
-    f = open(filepath+'//result.html', 'w')
+    f = open(filepath + '//result.html', 'w')
     f.write(htmlcontent)
-    print ("File saved under %s\\result.html" %filepath)
+    print ("File saved under %s\\result.html" % filepath)
     # Record the MIME types of both parts - text/plain and text/html.
     part1 = MIMEText(text, 'plain')
     part2 = MIMEText(htmlcontent, 'html')
@@ -384,7 +394,7 @@ def sendReport(content):
     try:
         print ("Sending email to %s" % config['to'])
         # Send the message via local SMTP server.
-        s = smtplib.SMTP(config['smtp'],config['smtp_port'])
+        s = smtplib.SMTP(config['smtp'], config['smtp_port'])
         # sendmail function takes 3 arguments: sender's address, recipient's address
         # and message to send - here it is sent as one string.
         s.sendmail(config['from'], config['to'], msg.as_string())
@@ -393,19 +403,19 @@ def sendReport(content):
         print("Error sending email : %s" % str(e))
 
 
-
 def initEmailConfig():
 
-    config = {'smtp' : 'yourserver',
-              'smtp_port' : 25,
-              'from' : 'from@server.com',
-              'to' : 'to@server.com'
-             }
+    config = {
+        'smtp': 'yourserver',
+        'smtp_port': 25,
+        'from': 'from@server.com',
+        'to': 'to@server.com'
+    }
     userPath = expanduser('~')
-    saveFilePath = r'%s\Documents\.gitcheck' %(userPath)
+    saveFilePath = r'%s\Documents\.gitcheck' % userPath
     if not os.path.exists(saveFilePath):
         os.makedirs(saveFilePath)
-    filename = saveFilePath+'\mail.properties'
+    filename = saveFilePath + '\mail.properties'
     json.dump(config, fp=open(filename, 'w'), indent=4)
     print('Please, modify config file located here : %s' % filename)
 
