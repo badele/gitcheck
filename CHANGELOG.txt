@@ -1,0 +1,53 @@
+Changelog
+=========
+
+Version 0.3.22 (2015-03-15)
+--------------------------
+ *
+ * Update the setup.py package
+
+Version 0.3.21 (2015-03-15)
+--------------------------
+ * Verbose mode when sending an email
+ * Replaced configobj parameters by a simple JSON file
+ * Add a global variables
+ * Add a debug mode for issue
+ * Add Python 3 support
+ * Added -u flag for untracked files to be inclused in the 'to commit'
+ * Find current branch even if it's not at the top of the list
+ * Display repositories in alphabetical order
+ * Show the name of the repository whose remotes are being updated
+ * Highlight with magenta a repo that has no changes but doesn't have remote either
+ * Fix failure on bare repositories
+
+
+
+Version 0.3.14 (2014-11-04)
+--------------------------
+ * changed the output to show the repository name instead of the absolute path
+ * Add followlinks to find repository in symlinks
+ * Fix whitespace errors
+ * Fix error when repository path contains one or more spaces
+ * Update the code for windows compatibility
+ * Send an email with HTML report
+
+
+Version 0.3 (2014-01-15)
+--------------------------
+
+ * Add and delete status
+ * Only show updated state
+ * Ignore untracked file
+ * First version with check remote status
+ * Show who files not pushed in remote repository
+ * Add support pull check
+ * Add the possibility to ignore branches based on a regex
+ * Show pull needed
+ * Add a watch mode and bell on push/pull needed
+ * Added functionality for selecting dir to check
+
+
+Version 0.0.1 (2013-04-16)
+--------------------------
+
+* First version
