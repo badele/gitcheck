@@ -16,15 +16,32 @@ import git
 
 from gitcheck import gitcheck
 
+GITROOT = '/tmp/gitcheck-unittest'
+
+
+def setUpModule():
+    # Get projects
+    get_github_projects("gitcheck", "https://github.com/badele/gitcheck.git")
+    get_github_projects("serialkiller", "https://github.com/badele/serialkiller.git")
+    get_github_projects("fabrecipes", "https://github.com/badele/fabrecipes.git")
+
+
+def get_github_projects(projectname, projecturl):
+    # Preparing the git directory
+    gitdir = "%s/%s" % (GITROOT, projectname)
+
+    if os.path.exists(gitdir):
+        shutil.rmtree(gitdir)
+    os.makedirs(gitdir)
+    os.chdir(GITROOT)
+
+    # Get a git projects
+    print "Get git %s project" % projectname
+    git.Git().clone(projecturl)
+
+
 class TestPackages(unittest.TestCase):
-    gitroot = '/tmp/gitcheck-unittest'
-
     def setUp(self):
-        # Get projects
-        self._get_github_projects("gitcheck", "git@github.com:badele/gitcheck.git")
-        self._get_github_projects("serialkiller", "git@github.com:badele/serialkiller.git")
-        self._get_github_projects("fabrecipes", "git@github.com:badele/fabrecipes.git")
-
         # Redirect stdout
         self.output = StringIO()
         self.saved_stdout = sys.stdout
@@ -36,28 +53,17 @@ class TestPackages(unittest.TestCase):
         self.output.close()
         sys.stdout = self.saved_stdout
 
-    def _get_github_projects(self, projectname, projecturl):
-        # Preparing the git directory
-        gitdir = "%s/%s" % (self.gitroot, projectname)
-
-        if os.path.exists(gitdir):
-            shutil.rmtree(gitdir)
-        os.makedirs(gitdir)
-        os.chdir(self.gitroot)
-
-        # Get a git projects
-        git.Git().clone(projecturl)
 
     def test_searchRepositories(self):
-        os.chdir(self.gitroot)
+        os.chdir(GITROOT)
         repos = gitcheck.searchRepositories()
 
-        self.assertEqual(repos[0], '%s/fabrecipes' % self.gitroot)
-        self.assertEqual(repos[1], '%s/gitcheck' % self.gitroot)
-        self.assertEqual(repos[2], '%s/serialkiller' % self.gitroot)
+        self.assertEqual(repos[0], '%s/fabrecipes' % GITROOT)
+        self.assertEqual(repos[1], '%s/gitcheck' % GITROOT)
+        self.assertEqual(repos[2], '%s/serialkiller' % GITROOT)
 
     def test_gitcheck(self):
-        os.chdir(self.gitroot)
+        os.chdir(GITROOT)
 
         gitcheck.tcolor.DEFAULT = ""
         gitcheck.tcolor.BOLD = ""
