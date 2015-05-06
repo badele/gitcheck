@@ -1,3 +1,7 @@
+.. image:: https://travis-ci.org/badele/gitcheck.svg?branch=unittest
+    :target: https://travis-ci.org/badele/gitcheck
+
+
 gitcheck
 ========
 
