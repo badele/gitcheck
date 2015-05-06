@@ -39,7 +39,9 @@ class TestPackages(unittest.TestCase):
     def _get_github_projects(self, projectname, projecturl):
         # Preparing the git directory
         gitdir = "%s/%s" % (self.gitroot, projectname)
-        shutil.rmtree(gitdir)
+
+        if os.path.exists(gitdir):
+            shutil.rmtree(gitdir)
         os.makedirs(gitdir)
         os.chdir(self.gitroot)
 
