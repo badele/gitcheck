@@ -11,6 +11,9 @@ decided to write gitcheck, a tool which reports the status of the
 repositories it finds in a file tree.  This report can of course be
 displayed on the terminal but also be sent by email.
 
+Now you can also check your host git from an docker container. See the docker section
+
+
 
 Installation
 ------------
@@ -32,7 +35,7 @@ changes to be committed or commits to be pushed.
 
 .. code:: bash
 
-    >gitcheck.py
+    $ gitcheck.py
 
 .. figure:: http://bruno.adele.im/static/gitcheck.png
    :alt: Gitcheck simple report
@@ -48,12 +51,42 @@ commits.
 
 .. code:: bash
 
-    >gitcheck.py -v
+    $ gitcheck.py -v
 
 .. figure:: http://bruno.adele.im/static/gitcheck_verbose.png
    :alt: Gitcheck detailed report
 
    Gitcheck detailed report
+
+Docker container
+~~~~~~~~~~~~~~~
+
+You can check your git repositories from an docker container (from your host)
+
+From the host, you can use this command
+
+.. code:: bash
+
+    $ docker run --rm -v `pwd`:/files:ro badele/alpine-gitcheck
+
+or
+
+.. code:: bash
+
+    $ docker run --rm -v `pwd`:/files:ro badele/alpine-gitcheck cd /files && gitcheck OPTIONS
+
+You can also create a shell function into the host, exemple for ZSH
+
+.. code:: bash
+
+    gitcheck (){
+        docker run --rm -v `pwd`:/files:ro badele/alpine-gitcheck
+    }
+    #
+    $ gitcheck
+
+More info about the gitcheck container https://registry.hub.docker.com/u/badele/alpine-gitcheck/
+
 
 Options
 ~~~~~~~

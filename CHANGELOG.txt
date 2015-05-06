@@ -3,6 +3,7 @@ Changelog
 
 Version 0.3.22 (2015-05-05)
 --------------------------
+ * Check git repositories from an docker container
  * Fix PEP8 coding style
  * Add travis CI unit intégration test
  * First unittest implementation
