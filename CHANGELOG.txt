@@ -3,6 +3,7 @@ Changelog
 
 Version 0.3.22 (2015-05-05)
 --------------------------
+ * Fix PEP8 coding style
  * Add travis CI unit intégration test
  * First unittest implementation
  * Update the setup.py package
