@@ -27,6 +27,7 @@ class gblvars:
     debugmod = False
     checkremote = False
     checkUntracked = False
+    checkall = False
     email = False
     watchInterval = 0
     bellOnActionNeeded = False
@@ -90,13 +91,12 @@ def searchRepositories():
 
 
 # Check state of a git repository
-def checkRepository(rep):
+def checkRepository(rep,branch):
     aitem = []
     mitem = []
     ditem = []
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    branch = getDefaultBranch(rep)
     if re.match(gblvars.ignoreBranch, branch):
         return False
 
@@ -104,7 +104,6 @@ def checkRepository(rep):
     ischange = len(changes) > 0
     actionNeeded = False  # actionNeeded is branch push/pull, not local file change.
 
-    branch = getDefaultBranch(rep)
     topush = ""
     topull = ""
     html.topush = ""
@@ -282,7 +281,7 @@ def hasRemoteBranch(rep, remote, branch):
 def getLocalToPush(rep, remote, branch):
     if not hasRemoteBranch(rep, remote, branch):
         return []
-    result = gitExec(rep, "log %(remote)s/%(branch)s..HEAD --oneline"
+    result = gitExec(rep, "log %(remote)s/%(branch)s..%(branch)s --oneline"
                      % locals())
 
     return [x for x in result.split('\n') if x]
@@ -291,7 +290,7 @@ def getLocalToPush(rep, remote, branch):
 def getRemoteToPull(rep, remote, branch):
     if not hasRemoteBranch(rep, remote, branch):
         return []
-    result = gitExec(rep, "log HEAD..%(remote)s/%(branch)s --oneline"
+    result = gitExec(rep, "log %(branch)s..%(remote)s/%(branch)s --oneline"
                      % locals())
 
     return [x for x in result.split('\n') if x]
@@ -312,7 +311,17 @@ def getDefaultBranch(rep):
     if m:
         branch = m.group(1)
 
-    return branch
+    return {branch}
+
+
+# Get all branches for repository
+def getAllBranches(rep):
+    gitbranch = gitExec(rep, "branch"
+                        % locals())
+
+    branch = gitbranch.splitlines()
+
+    return [b[2:] for b in branch]
 
 
 def getRemoteRepositories(rep):
@@ -352,8 +361,13 @@ def gitcheck():
 
     showDebug("Processing repositories... please wait.")
     for r in repo:
-        if checkRepository(r):
-            actionNeeded = True
+        if (gblvars.checkall):
+            branch = getAllBranches(r)
+        else:
+            branch = getDefaultBranch(r)
+        for b in branch:
+            if checkRepository(r,b):
+                actionNeeded = True
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
 
@@ -435,6 +449,7 @@ def usage():
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
+    print("  -a, --all-branch                     Show the status of all branches")
     print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
 
 
@@ -442,10 +457,10 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrubw:i:d:m:q:e",
+            "vhrubw:i:d:m:q:e:a",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
-                "dir=", "maxdepth=", "quiet", "email", "init-email"
+                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch"
             ]
         )
     except getopt.GetoptError as e:
@@ -486,6 +501,8 @@ def main():
             gblvars.quiet = True
         elif opt in ("-e", "--email"):
             gblvars.email = True
+        elif opt in ("-a", "--all-branch"):
+            gblvars.checkall = True
         elif opt in ("--init-email"):
             initEmailConfig()
             sys.exit(0)
