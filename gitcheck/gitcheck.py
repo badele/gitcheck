@@ -473,7 +473,7 @@ def main():
     for opt, arg in opts:
         if opt in ("-v", "--verbose"):
             gblvars.verbose = True
-        elif opt in ("--debug"):
+        elif opt == "--debug":
             gblvars.debugmod = True
         elif opt in ("-r", "--remote"):
             gblvars.checkremote = True
