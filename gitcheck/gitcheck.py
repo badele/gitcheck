@@ -91,7 +91,7 @@ def searchRepositories():
 
 
 # Check state of a git repository
-def checkRepository(rep,branch):
+def checkRepository(rep, branch):
     aitem = []
     mitem = []
     ditem = []
@@ -366,7 +366,7 @@ def gitcheck():
         else:
             branch = getDefaultBranch(r)
         for b in branch:
-            if checkRepository(r,b):
+            if checkRepository(r, b):
                 actionNeeded = True
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
