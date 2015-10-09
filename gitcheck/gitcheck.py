@@ -35,6 +35,7 @@ class gblvars:
     depth = None
     quiet = False
     ignoreBranch = r'^$'  # empty string
+    ignoreLocal = r'^$'  # empty string
 
 
 # Class for terminal Color
@@ -266,9 +267,10 @@ def getLocalFilesChange(rep):
 
     lines = result.split('\n')
     for l in lines:
-        m = snbchange.match(l)
-        if m:
-            files.append([m.group(1), m.group(2)])
+        if not re.match(gblvars.ignoreLocal, l):
+            m = snbchange.match(l)
+            if m:
+                files.append([m.group(1), m.group(2)])
 
     return files
 
@@ -450,6 +452,7 @@ def usage():
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
     print("  -a, --all-branch                     Show the status of all branches")
+    print("  -l <re>, --localignore=<re>          ignore changes in local files which match the regex <re>")
     print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
 
 
@@ -457,10 +460,10 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrubw:i:d:m:q:e:a",
+            "vhrubw:i:d:m:q:e:al:",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
-                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch"
+                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
             ]
         )
     except getopt.GetoptError as e:
@@ -489,6 +492,8 @@ def main():
                 sys.exit(2)
         elif opt in ("-i", "--ignore-branch"):
             gblvars.ignoreBranch = arg
+        elif opt in ("-l", "--localignore"):
+            gblvars.ignoreLocal = arg
         elif opt in ("-d", "--dir"):
             gblvars.searchDir = arg
         elif opt in ("-m", '--maxdepth'):
