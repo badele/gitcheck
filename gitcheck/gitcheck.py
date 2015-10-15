@@ -456,40 +456,40 @@ def main():
         sys.exit(2)
 
     for opt, arg in opts:
-        if opt in ("-v", "--verbose"):
+        if opt in ["-v", "--verbose"]:
             gblvars.verbose = True
-        elif opt in ("--debug"):
+        elif opt in ["--debug"]:
             gblvars.debugmod = True
-        elif opt in ("-r", "--remote"):
+        elif opt in ["-r", "--remote"]:
             gblvars.checkremote = True
-        elif opt in ("-u", "--untracked"):
+        elif opt in ["-u", "--untracked"]:
             gblvars.checkUntracked = True
-        elif opt in ("-b", "--bell"):
+        elif opt in ["-b", "--bell"]:
             gblvars.bellOnActionNeeded = True
-        elif opt in ("-w", "--watch"):
+        elif opt in ["-w", "--watch"]:
             try:
                 gblvars.watchInterval = float(arg)
             except ValueError:
                 print("option %s requires numeric value" % opt)
                 sys.exit(2)
-        elif opt in ("-i", "--ignore-branch"):
+        elif opt in ["-i", "--ignore-branch"]:
             gblvars.ignoreBranch = arg
-        elif opt in ("-d", "--dir"):
+        elif opt in ["-d", "--dir"]:
             gblvars.searchDir = arg
-        elif opt in ("-m", '--maxdepth'):
+        elif opt in ["-m", '--maxdepth']:
             try:
                 gblvars.depth = int(arg)
             except ValueError:
                 print("option %s requires int value" % opt)
                 sys.exit(2)
-        elif opt in ("-q", "--quiet"):
+        elif opt in ["-q", "--quiet"]:
             gblvars.quiet = True
-        elif opt in ("-e", "--email"):
+        elif opt in ["-e", "--email"]:
             gblvars.email = True
-        elif opt in ("--init-email"):
+        elif opt in ["--init-email"]:
             initEmailConfig()
             sys.exit(0)
-        elif opt in ("-h", "--help"):
+        elif opt in ["-h", "--help"]:
             usage()
             sys.exit(0)
 #        else:
