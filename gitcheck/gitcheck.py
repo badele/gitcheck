@@ -22,20 +22,7 @@ import json
 
 
 # Global vars
-class gblvars:
-    verbose = False
-    debugmod = False
-    checkremote = False
-    checkUntracked = False
-    checkall = False
-    email = False
-    watchInterval = 0
-    bellOnActionNeeded = False
-    searchDir = None
-    depth = None
-    quiet = False
-    ignoreBranch = r'^$'  # empty string
-    ignoreLocal = r'^$'  # empty string
+argopts = {}
 
 
 # Class for terminal Color
@@ -62,14 +49,14 @@ class html:
 
 
 def showDebug(mess, level='info'):
-    if gblvars.debugmod:
+    if argopts.get('debugmod', False):
         print(mess)
 
 
 # Search all local repositories from current directory
 def searchRepositories():
     showDebug('Beginning scan... building list of git folders')
-    dir = gblvars.searchDir
+    dir = argopts.get('searchDir', None)
     if dir is not None and dir[-1:] == '/':
         dir = dir[:-1]
     curdir = os.path.abspath(os.getcwd()) if dir is None else dir
@@ -81,7 +68,7 @@ def searchRepositories():
 
     for directory, dirnames, filenames in os.walk(curdir):
         level = directory.count(os.sep) - startinglevel
-        if gblvars.depth is None or level <= gblvars.depth:
+        if argopts.get('depth', None) is None or level <= argopts.get('depth', None):
             if '.git' in dirnames:
                 showDebug("  Add %s repository" % directory)
                 repo.append(directory)
@@ -98,7 +85,7 @@ def checkRepository(rep, branch):
     ditem = []
     gsearch = re.compile(r'^.?([A-Z]) (.*)')
 
-    if re.match(gblvars.ignoreBranch, branch):
+    if re.match(argopts.get('ignoreBranch', r'^$'), branch):
         return False
 
     changes = getLocalFilesChange(rep)
@@ -147,7 +134,7 @@ def checkRepository(rep, branch):
                     r,
                     count
                 )
-    if ischange or not gblvars.quiet:
+    if ischange or not argopts.get('quiet', False):
         # Remove trailing slash from repository/directory name
         if rep[-1:] == '/':
             rep = rep[:-1]
@@ -196,16 +183,17 @@ def checkRepository(rep, branch):
             strlocal = ""
             html.strlocal = ""
 
-        if gblvars.email:
+        if argopts.get('email', False):
             html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)
 
         else:
             print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
 
-        if gblvars.verbose:
+        if argopts.get('verbose', False):
             if ischange > 0:
                 filename = "  |--Local"
-                if not gblvars.email: print(filename)
+                if not argopts.get('email', False):
+                    print(filename)
                 html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'
                 for c in changes:
                     filename = "     |--%s%s%s %s%s" % (
@@ -215,7 +203,7 @@ def checkRepository(rep, branch):
                         c[1],
                         tcolor.DEFAULT)
                     html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
-                    if not gblvars.email: print(filename)
+                    if not argopts.get('email', False): print(filename)
                 html.msg += '</ul>\n'
             if branch != "":
                 remotes = getRemoteRepositories(rep)
@@ -224,7 +212,7 @@ def checkRepository(rep, branch):
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
                         html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
-                        if not gblvars.email: print(rname)
+                        if not argopts.get('email', False): print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Push]%s %s%s%s" % (
                                 tcolor.MAGENTA,
@@ -233,7 +221,7 @@ def checkRepository(rep, branch):
                                 commit,
                                 tcolor.DEFAULT)
                             html.msg += '<li><b style="color:blue">[To Push] </b>%s</li>\n' % commit
-                            if not gblvars.email: print(pcommit)
+                            if not argopts.get('email', False): print(pcommit)
                         html.msg += '</ul>\n'
 
             if branch != "":
@@ -243,7 +231,7 @@ def checkRepository(rep, branch):
                     if len(commits) > 0:
                         rname = "  |--%(r)s" % locals()
                         html.msg += '<ul><li><b>%(r)s</b></li>\n</ul>\n<ul>\n' % locals()
-                        if not gblvars.email: print(rname)
+                        if not argopts.get('email', False): print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Pull]%s %s%s%s" % (
                                 tcolor.MAGENTA,
@@ -252,7 +240,7 @@ def checkRepository(rep, branch):
                                 commit,
                                 tcolor.DEFAULT)
                             html.msg += '<li><b style="color:blue">[To Pull] </b>%s</li>\n' % commit
-                            if not gblvars.email: print(pcommit)
+                            if not argopts.get('email', False): print(pcommit)
                         html.msg += '</ul>\n'
 
     return actionNeeded
@@ -262,12 +250,12 @@ def getLocalFilesChange(rep):
     files = []
     #curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
-    onlyTrackedArg = "" if gblvars.checkUntracked else "uno"
+    onlyTrackedArg = "" if argopts.get('checkUntracked', False) else "uno"
     result = gitExec(rep, "status -s" + onlyTrackedArg)
 
     lines = result.split('\n')
     for l in lines:
-        if not re.match(gblvars.ignoreLocal, l):
+        if not re.match(argopts.get('ignoreLocal', r'^$'), l):
             m = snbchange.match(l)
             if m:
                 files.append([m.group(1), m.group(2)])
@@ -348,22 +336,22 @@ def gitExec(path, cmd):
 
 # Check all git repositories
 def gitcheck():
-    showDebug("Global Vars: %s" % vars(gblvars))
+    showDebug("Global Vars: %s" % argopts)
 
     repo = searchRepositories()
     actionNeeded = False
 
-    if gblvars.checkremote:
+    if argopts.get('checkremote', False):
         for r in repo:
             print ("Updating %s remotes..." % r)
             updateRemote(r)
 
-    if gblvars.watchInterval > 0:
+    if argopts.get('watchInterval', 0) > 0:
         print(tcolor.RESET)
 
     showDebug("Processing repositories... please wait.")
     for r in repo:
-        if (gblvars.checkall):
+        if (argopts.get('checkall', False)):
             branch = getAllBranches(r)
         else:
             branch = getDefaultBranch(r)
@@ -373,7 +361,7 @@ def gitcheck():
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
 
-    if actionNeeded and gblvars.bellOnActionNeeded:
+    if actionNeeded and argopts.get('bellOnActionNeeded', False):
         print(tcolor.BELL)
 
 
@@ -435,6 +423,12 @@ def initEmailConfig():
     json.dump(config, fp=open(filename, 'w'), indent=4)
     print('Please, modify config file located here : %s' % filename)
 
+def readDefaultConfig():
+    filename = expanduser('~/.gitcheck')
+    if os.path.exists(filename):
+        pass
+
+
 
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
@@ -473,41 +467,42 @@ def main():
             print(e.msg)
         sys.exit(2)
 
+    readDefaultConfig()
     for opt, arg in opts:
         if opt in ["-v", "--verbose"]:
-            gblvars.verbose = True
+            argopts['verbose'] = True
         elif opt in ["--debug"]:
-            gblvars.debugmod = True
+            argopts['debugmod'] = True
         elif opt in ["-r", "--remote"]:
-            gblvars.checkremote = True
+            argopts['checkremote'] = True
         elif opt in ["-u", "--untracked"]:
-            gblvars.checkUntracked = True
+            argopts['checkUntracked'] = True
         elif opt in ["-b", "--bell"]:
-            gblvars.bellOnActionNeeded = True
+            argopts['bellOnActionNeeded'] = True
         elif opt in ["-w", "--watch"]:
             try:
-                gblvars.watchInterval = float(arg)
+                argopts['watchInterval'] = float(arg)
             except ValueError:
                 print("option %s requires numeric value" % opt)
                 sys.exit(2)
         elif opt in ["-i", "--ignore-branch"]:
-            gblvars.ignoreBranch = arg
+            argopts['ignoreBranch'] = arg
         elif opt in ["-l", "--localignore"]:
-            gblvars.ignoreLocal = arg
+            argopts['ignoreLocal'] = arg
         elif opt in ["-d", "--dir"]:
-            gblvars.searchDir = arg
+            argopts['searchDir'] = arg
         elif opt in ["-m", '--maxdepth']:
             try:
-                gblvars.depth = int(arg)
+                argopts['depth'] = int(arg)
             except ValueError:
                 print("option %s requires int value" % opt)
                 sys.exit(2)
         elif opt in ["-q", "--quiet"]:
-            gblvars.quiet = True
+            argopts['quiet'] = True
         elif opt in ["-e", "--email"]:
-            gblvars.email = True
+            argopts['email'] = True
         elif opt in ["-a", "--all-branch"]:
-            gblvars.checkall = True
+            argopts['checkall'] = True
         elif opt in ["--init-email"]:
             initEmailConfig()
             sys.exit(0)
@@ -521,11 +516,11 @@ def main():
     while True:
         gitcheck()
 
-        if gblvars.email:
+        if argopts.get('email', False):
             sendReport(html.msg)
 
-        if gblvars.watchInterval > 0:
-            time.sleep(gblvars.watchInterval)
+        if argopts.get('watchInterval', 0) > 0:
+            time.sleep(argopts.get('watchInterval', 0))
         else:
             break
 
