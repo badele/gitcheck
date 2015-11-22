@@ -65,14 +65,22 @@ class TestPackages(unittest.TestCase):
     def test_gitcheck(self):
         os.chdir(GITROOT)
 
-        gitcheck.tcolor.DEFAULT = ""
-        gitcheck.tcolor.BOLD = ""
-        gitcheck.tcolor.RED = ""
-        gitcheck.tcolor.GREEN = ""
-        gitcheck.tcolor.BLUE = ""
-        gitcheck.tcolor.ORANGE = ""
-        gitcheck.tcolor.MAGENTA = ""
-        gitcheck.tcolor.RESET = ""
+        defaulttheme = ""
+        gitcheck.colortheme = {
+            'default': defaulttheme,
+            'prjchanged': defaulttheme,
+            'prjremote': defaulttheme,
+            'prjname': defaulttheme,
+            'reponame': defaulttheme,
+            'branchname': defaulttheme,
+            'fileupdated': defaulttheme,
+            'remoteto': defaulttheme,
+            'committo': defaulttheme,
+            'commitinfo': defaulttheme,
+            'commitstate': defaulttheme,
+            'bell': defaulttheme,
+            'reset': defaulttheme,
+        }
 
         gitcheck.gitcheck()
 

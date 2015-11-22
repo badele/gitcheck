@@ -53,7 +53,7 @@ commits.
 
     $ gitcheck.py -v
 
-.. figure:: http://bruno.adele.im/static/gitcheck_verbose.png
+.. figure:: http://bruno.adele.im/static/gitcheck_verbose_v2.png
    :alt: Gitcheck detailed report
 
    Gitcheck detailed report

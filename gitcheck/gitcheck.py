@@ -20,22 +20,38 @@ from time import strftime
 
 import json
 
+from colored import fg, bg, attr
 
 # Global vars
 argopts = {}
 
+#Load custom parameters from ~/mygitcheck.py
+configfile = expanduser('~/mygitcheck.py')
+if os.path.exists(configfile):
+    sys.path.append(expanduser('~'))
+    import mygitcheck as userconf
 
-# Class for terminal Color
-class tcolor:
-    DEFAULT = "\033[0m"
-    BOLD = "\033[1m"
-    RED = "\033[0;1;31;40m"
-    GREEN = "\033[0;1;32;40m"
-    BLUE = "\033[0;1;36;40m"
-    ORANGE = "\033[0;1;33;40m"
-    MAGENTA = "\033[0;1;35;40m"
-    RESET = "\033[2J\033[H"
-    BELL = "\a"
+    # Try to load colorthemme
+    if hasattr(userconf, 'colortheme'):
+        colortheme = userconf.colortheme
+    else:
+        # Default theme
+        defaultcolor = attr('reset') + fg('white')
+        colortheme = {
+            'default': defaultcolor,
+            'prjchanged': attr('reset') + attr('bold') + fg('deep_pink_1a'),
+            'prjremote': attr('reverse') + fg('light_cyan'),
+            'prjname': attr('reset') + fg('chartreuse_1'),
+            'reponame': attr('reset') + fg('light_goldenrod_2b'),
+            'branchname': defaultcolor,
+            'fileupdated': attr('reset') + fg('light_goldenrod_2b'),
+            'remoteto': attr('reset') + fg('deep_sky_blue_3b'),
+            'committo': attr('reset') + fg('violet'),
+            'commitinfo': attr('reset') + fg('deep_sky_blue_3b'),
+            'commitstate': attr('reset') + fg('deep_pink_1a'),
+            'bell': "\a",
+            'reset': "\033[2J\033[H"
+        }
 
 
 class html:
@@ -105,11 +121,11 @@ def checkRepository(rep, branch):
             actionNeeded = actionNeeded or (count > 0)
             if count > 0:
                 topush += " %s%s%s[%sTo Push:%s%s]" % (
-                    tcolor.ORANGE,
+                    colortheme['reponame'],
                     r,
-                    tcolor.DEFAULT,
-                    tcolor.BLUE,
-                    tcolor.DEFAULT,
+                    colortheme['default'],
+                    colortheme['remoteto'],
+                    colortheme['default'],
                     count
                 )
                 html.topush += '<b style="color:black">%s</b>[<b style="color:blue">To Push:</b><b style="color:black">%s</b>]' % (
@@ -123,11 +139,11 @@ def checkRepository(rep, branch):
             actionNeeded = actionNeeded or (count > 0)
             if count > 0:
                 topull += " %s%s%s[%sTo Pull:%s%s]" % (
-                    tcolor.ORANGE,
+                    colortheme['reponame'],
                     r,
-                    tcolor.DEFAULT,
-                    tcolor.BLUE,
-                    tcolor.DEFAULT,
+                    colortheme['default'],
+                    colortheme['remoteto'],
+                    colortheme['default'],
                     count
                 )
                 html.topull += '<b style="color:black">%s</b>[<b style="color:blue">To Pull:</b><b style="color:black">%s</b>]' % (
@@ -153,24 +169,22 @@ def checkRepository(rep, branch):
             repname = rep
 
         if ischange:
-            color = tcolor.BOLD + tcolor.RED
+            prjname = "%s%s%s" % (colortheme['prjchanged'], repname, colortheme['default'])
             html.prjname = '<b style="color:red">%s</b>' % (repname)
         elif not hasremotes:
-            color = tcolor.BOLD + tcolor.MAGENTA
+            prjname = "%s%s%s" % (colortheme['prjremote'], repname, colortheme['default'])
             html.prjname = '<b style="color:magenta">%s</b>' % (repname)
         else:
-            color = tcolor.DEFAULT + tcolor.GREEN
+            prjname = "%s%s%s" % (colortheme['prjname'], repname, colortheme['default'])
             html.prjname = '<b style="color:green">%s</b>' % (repname)
 
         # Print result
-        prjname = "%s%s%s" % (color, repname, tcolor.DEFAULT)
-
         if len(changes) > 0:
-            strlocal = "%sLocal%s[" % (tcolor.ORANGE, tcolor.DEFAULT)
+            strlocal = "%sLocal%s[" % (colortheme['reponame'], colortheme['default'])
             lenFilesChnaged = len(getLocalFilesChange(rep))
             strlocal += "%sTo Commit:%s%s" % (
-                tcolor.BLUE,
-                tcolor.DEFAULT,
+                colortheme['remoteto'],
+                colortheme['default'],
                 lenFilesChnaged
             )
             html.strlocal = '<b style="color:orange"> Local</b><b style="color:black">['
@@ -187,7 +201,8 @@ def checkRepository(rep, branch):
             html.msg += "<li>%s/%s %s %s %s</li>\n" % (html.prjname, branch, html.strlocal, html.topush, html.topull)
 
         else:
-            print("%(prjname)s/%(branch)s %(strlocal)s%(topush)s%(topull)s" % locals())
+            cbranch = "%s%s" % (colortheme['branchname'], branch)
+            print("%(prjname)s/%(cbranch)s %(strlocal)s%(topush)s%(topull)s" % locals())
 
         if argopts.get('verbose', False):
             if ischange > 0:
@@ -197,11 +212,11 @@ def checkRepository(rep, branch):
                 html.msg += '<ul><li><b>Local</b></li></ul>\n<ul>\n'
                 for c in changes:
                     filename = "     |--%s%s%s %s%s" % (
-                        tcolor.MAGENTA,
+                        colortheme['commitstate'],
                         c[0],
-                        tcolor.ORANGE,
+                        colortheme['fileupdated'],
                         c[1],
-                        tcolor.DEFAULT)
+                        colortheme['default'])
                     html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
                     if not argopts.get('email', False): print(filename)
                 html.msg += '</ul>\n'
@@ -215,11 +230,11 @@ def checkRepository(rep, branch):
                         if not argopts.get('email', False): print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Push]%s %s%s%s" % (
-                                tcolor.MAGENTA,
-                                tcolor.DEFAULT,
-                                tcolor.BLUE,
+                                colortheme['committo'],
+                                colortheme['default'],
+                                colortheme['commitinfo'],
                                 commit,
-                                tcolor.DEFAULT)
+                                colortheme['default'])
                             html.msg += '<li><b style="color:blue">[To Push] </b>%s</li>\n' % commit
                             if not argopts.get('email', False): print(pcommit)
                         html.msg += '</ul>\n'
@@ -234,11 +249,11 @@ def checkRepository(rep, branch):
                         if not argopts.get('email', False): print(rname)
                         for commit in commits:
                             pcommit = "     |--%s[To Pull]%s %s%s%s" % (
-                                tcolor.MAGENTA,
-                                tcolor.DEFAULT,
-                                tcolor.BLUE,
+                                colortheme['committo'],
+                                colortheme['default'],
+                                colortheme['commitinfo'],
                                 commit,
-                                tcolor.DEFAULT)
+                                colortheme['default'])
                             html.msg += '<li><b style="color:blue">[To Pull] </b>%s</li>\n' % commit
                             if not argopts.get('email', False): print(pcommit)
                         html.msg += '</ul>\n'
@@ -347,7 +362,7 @@ def gitcheck():
             updateRemote(r)
 
     if argopts.get('watchInterval', 0) > 0:
-        print(tcolor.RESET)
+        print(colortheme['reset'])
 
     showDebug("Processing repositories... please wait.")
     for r in repo:
@@ -362,7 +377,7 @@ def gitcheck():
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
 
     if actionNeeded and argopts.get('bellOnActionNeeded', False):
-        print(tcolor.BELL)
+        print(colortheme['bell'])
 
 
 def sendReport(content):
@@ -423,11 +438,11 @@ def initEmailConfig():
     json.dump(config, fp=open(filename, 'w'), indent=4)
     print('Please, modify config file located here : %s' % filename)
 
+
 def readDefaultConfig():
     filename = expanduser('~/.gitcheck')
     if os.path.exists(filename):
         pass
-
 
 
 def usage():
