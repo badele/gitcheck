@@ -58,6 +58,13 @@ commits.
 
    Gitcheck detailed report
 
+Gitcheck customization
+~~~~~~~~~~~~~~~~~~~~~~
+
+You can customize the output color, the gitcheck try to find `~/mygitcheck.py`
+if it found, it is imported, see the `mygitcheck.py.sample`
+
+
 Docker container
 ~~~~~~~~~~~~~~~
 
