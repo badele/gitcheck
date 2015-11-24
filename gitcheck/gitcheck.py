@@ -363,6 +363,7 @@ def gitcheck():
 
     if argopts.get('watchInterval', 0) > 0:
         print(colortheme['reset'])
+        print(strftime("%Y-%m-%d %H:%M:%S"))
 
     showDebug("Processing repositories... please wait.")
     for r in repo:
@@ -529,10 +530,16 @@ def main():
 #            sys.exit(2)
 
     while True:
-        gitcheck()
+        try: 
+            gitcheck()
 
-        if argopts.get('email', False):
-            sendReport(html.msg)
+            if argopts.get('email', False):
+                sendReport(html.msg)
+
+        except (KeyboardInterrupt, SystemExit):
+            raise
+        except Exception as e:
+            print ("Unexpected error:", str(e))
 
         if argopts.get('watchInterval', 0) > 0:
             time.sleep(argopts.get('watchInterval', 0))
