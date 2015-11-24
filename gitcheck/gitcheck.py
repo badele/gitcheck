@@ -24,34 +24,34 @@ from colored import fg, bg, attr
 
 # Global vars
 argopts = {}
-
+colortheme = None
 #Load custom parameters from ~/mygitcheck.py
 configfile = expanduser('~/mygitcheck.py')
 if os.path.exists(configfile):
     sys.path.append(expanduser('~'))
     import mygitcheck as userconf
 
-    # Try to load colorthemme
+    # Try to load colortheme
     if hasattr(userconf, 'colortheme'):
         colortheme = userconf.colortheme
-    else:
-        # Default theme
-        defaultcolor = attr('reset') + fg('white')
-        colortheme = {
-            'default': defaultcolor,
-            'prjchanged': attr('reset') + attr('bold') + fg('deep_pink_1a'),
-            'prjremote': attr('reverse') + fg('light_cyan'),
-            'prjname': attr('reset') + fg('chartreuse_1'),
-            'reponame': attr('reset') + fg('light_goldenrod_2b'),
-            'branchname': defaultcolor,
-            'fileupdated': attr('reset') + fg('light_goldenrod_2b'),
-            'remoteto': attr('reset') + fg('deep_sky_blue_3b'),
-            'committo': attr('reset') + fg('violet'),
-            'commitinfo': attr('reset') + fg('deep_sky_blue_3b'),
-            'commitstate': attr('reset') + fg('deep_pink_1a'),
-            'bell': "\a",
-            'reset': "\033[2J\033[H"
-        }
+if colortheme is None:
+    # Default theme
+    defaultcolor = attr('reset') + fg('white')
+    colortheme = {
+        'default': defaultcolor,
+        'prjchanged': attr('reset') + attr('bold') + fg('deep_pink_1a'),
+        'prjremote': attr('reverse') + fg('light_cyan'),
+        'prjname': attr('reset') + fg('chartreuse_1'),
+        'reponame': attr('reset') + fg('light_goldenrod_2b'),
+        'branchname': defaultcolor,
+        'fileupdated': attr('reset') + fg('light_goldenrod_2b'),
+        'remoteto': attr('reset') + fg('deep_sky_blue_3b'),
+        'committo': attr('reset') + fg('violet'),
+        'commitinfo': attr('reset') + fg('deep_sky_blue_3b'),
+        'commitstate': attr('reset') + fg('deep_pink_1a'),
+        'bell': "\a",
+        'reset': "\033[2J\033[H"
+    }
 
 
 class html:
