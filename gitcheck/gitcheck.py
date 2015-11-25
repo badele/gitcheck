@@ -530,7 +530,7 @@ def main():
 #            sys.exit(2)
 
     while True:
-        try: 
+        try:
             gitcheck()
 
             if argopts.get('email', False):
