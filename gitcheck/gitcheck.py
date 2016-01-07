@@ -14,6 +14,7 @@ from smtplib import SMTPException
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import shlex
+from colorama import init as windows_color_terminal
 
 from os.path import expanduser
 from time import strftime
@@ -467,6 +468,8 @@ def usage():
 
 
 def main():
+    if 'win' in sys.platform:
+        windows_color_terminal()
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
