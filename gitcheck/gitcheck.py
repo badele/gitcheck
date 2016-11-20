@@ -72,22 +72,22 @@ def showDebug(mess, level='info'):
 # Search all local repositories from current directory
 def searchRepositories():
     showDebug('Beginning scan... building list of git folders')
-    dir = argopts.get('searchDir', None)
-    if dir is not None and dir[-1:] == '/':
-        dir = dir[:-1]
-    curdir = os.path.abspath(os.getcwd()) if dir is None else dir
-    showDebug("  Scan git repositories from %s" % curdir)
-
-    html.path = curdir
-    startinglevel = curdir.count(os.sep)
+    dirs = argopts.get('searchDir', [os.path.abspath(os.getcwd())])
     repo = []
+    for curdir in dirs:
+        if curdir[-1:] == '/':
+            curdir = curdir[:-1]
+        showDebug("  Scan git repositories from %s" % curdir)
 
-    for directory, dirnames, filenames in os.walk(curdir):
-        level = directory.count(os.sep) - startinglevel
-        if argopts.get('depth', None) is None or level <= argopts.get('depth', None):
-            if '.git' in dirnames:
-                showDebug("  Add %s repository" % directory)
-                repo.append(directory)
+        html.path = curdir
+        startinglevel = curdir.count(os.sep)
+
+        for directory, dirnames, filenames in os.walk(curdir):
+            level = directory.count(os.sep) - startinglevel
+            if argopts.get('depth', None) is None or level <= argopts.get('depth', None):
+                if '.git' in dirnames:
+                    showDebug("  Add %s repository" % directory)
+                    repo.append(directory)
 
     repo.sort()
     showDebug('Done')
@@ -457,7 +457,7 @@ def usage():
     print("  -b, --bell                           bell on action needed")
     print("  -w <sec>, --watch=<sec>              after displaying, wait <sec> and run again")
     print("  -i <re>, --ignore-branch=<re>        ignore branches matching the regex <re>")
-    print("  -d <dir>, --dir=<dir>                Search <dir> for repositories")
+    print("  -d <dir>, --dir=<dir>                Search <dir> for repositories (can be used multiple times)")
     print("  -m <maxdepth>, --maxdepth=<maxdepth> Limit the depth of repositories search")
     print("  -q, --quiet                          Display info only when repository needs action")
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
@@ -506,7 +506,10 @@ def main():
         elif opt in ["-l", "--localignore"]:
             argopts['ignoreLocal'] = arg
         elif opt in ["-d", "--dir"]:
-            argopts['searchDir'] = arg
+            dirs = argopts.get('searchDir', [])
+            if (dirs == []):
+                argopts['searchDir'] = dirs
+            dirs.append(arg)
         elif opt in ["-m", '--maxdepth']:
             try:
                 argopts['depth'] = int(arg)
