@@ -73,7 +73,7 @@ def showDebug(mess, level='info'):
 def searchRepositories():
     showDebug('Beginning scan... building list of git folders')
     dirs = argopts.get('searchDir', [os.path.abspath(os.getcwd())])
-    repo = []
+    repo = set()
     for curdir in dirs:
         if curdir[-1:] == '/':
             curdir = curdir[:-1]
@@ -87,12 +87,10 @@ def searchRepositories():
             if argopts.get('depth', None) is None or level <= argopts.get('depth', None):
                 if '.git' in dirnames:
                     showDebug("  Add %s repository" % directory)
-                    repo.append(directory)
+                    repo.add(directory)
 
-    repo.sort()
     showDebug('Done')
-    return repo
-
+    return sorted(repo)
 
 # Check state of a git repository
 def checkRepository(rep, branch):
