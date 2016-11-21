@@ -92,6 +92,7 @@ def searchRepositories():
     showDebug('Done')
     return sorted(repo)
 
+
 # Check state of a git repository
 def checkRepository(rep, branch):
     aitem = []
