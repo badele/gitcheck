@@ -59,7 +59,7 @@ setup(
     license='GPL',
     url='https://github.com/badele/gitcheck',
     setup_requires=[
-        'gitpython',
+        'gitpython', 'colorama',
     ],
     tests_require=[],
     test_suite='tests',

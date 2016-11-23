@@ -14,6 +14,7 @@ from smtplib import SMTPException
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import shlex
+from colorama import init as windows_color_terminal
 
 from os.path import expanduser
 from time import strftime
@@ -466,20 +467,22 @@ def usage():
 
 
 def main():
+    if 'win' in sys.platform:
+        windows_color_terminal()
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrubw:i:d:m:q:e:al:",
+            "vhrubw:i:d:m:qeal:",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
                 "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
             ]
         )
-    except getopt.GetoptError as e:
-        if e.opt == 'w' and 'requires argument' in e.msg:
+    except getopt.GetoptError as error:
+        if error.opt == 'w' and 'requires argument' in error.msg:
             print("Please indicate nb seconds for refresh ex: gitcheck -w10")
         else:
-            print(e.msg)
+            print(error.msg)
         sys.exit(2)
 
     readDefaultConfig()
