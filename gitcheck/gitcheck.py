@@ -107,6 +107,11 @@ def checkRepository(rep, branch):
     ischange = len(changes) > 0
     actionNeeded = False  # actionNeeded is branch push/pull, not local file change.
 
+    ## Repository hasn't any changes and user ask to print
+    ## only the repos that has anything changed.
+    if not ischange and 'onlychanged' in argopts:
+        return False;
+
     topush = ""
     topull = ""
     html.topush = ""
@@ -472,7 +477,8 @@ def main():
             "vhrubw:i:d:m:q:e:al:",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
-                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
+                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore=",
+                "onlychanged"
             ]
         )
     except getopt.GetoptError as e:
@@ -527,6 +533,8 @@ def main():
         elif opt in ["-h", "--help"]:
             usage()
             sys.exit(0)
+        elif opt in ['--onlychanged']:
+            argopts['onlychanged'] = True
 #        else:
 #            print "Unhandled option %s" % opt
 #            sys.exit(2)
