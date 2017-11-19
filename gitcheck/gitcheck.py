@@ -445,6 +445,16 @@ def readDefaultConfig():
         pass
 
 
+def checkHooks():
+    if "push-hook" in argopts and not os.path.isfile(argopts["push-hook"]):
+        print("push-hook isn't a valid file: %s" % argopts["push-hook"])
+        argopts["push-hook"] = None;
+
+    if "pull-hook" in argopts and not os.path.isfile(argopts["pull-hook"]):
+        print("pull-hook isn't a valid file: %s" % argopts["pull-hook"])
+        argopts["pull-hook"] = None;
+
+
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
     print("Check multiple git repository in one pass")
@@ -538,6 +548,7 @@ def main():
 
     while True:
         try:
+            checkHooks()
             gitcheck()
 
             if argopts.get('email', False):
