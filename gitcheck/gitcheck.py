@@ -472,7 +472,8 @@ def main():
             "vhrubw:i:d:m:q:e:al:",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
-                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
+                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore=",
+                "push-hook=", "pull-hook="
             ]
         )
     except getopt.GetoptError as e:
@@ -527,6 +528,10 @@ def main():
         elif opt in ["-h", "--help"]:
             usage()
             sys.exit(0)
+        elif opt in ["--push-hook"]:
+            argopts["push-hook"] = arg
+        elif opt in ["--pull-hook"]:
+            argopts["pull-hook"] = arg
 #        else:
 #            print "Unhandled option %s" % opt
 #            sys.exit(2)
