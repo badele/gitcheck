@@ -68,6 +68,23 @@ def showDebug(mess, level='info'):
     if argopts.get('debugmod', False):
         print(mess)
 
+def makeRepoNameRelative(rep):
+    # Remove trailing slash from repository/directory name
+    if rep[-1:] == '/':
+        rep = rep[:-1]
+
+    # Do some magic to not show the absolute path as repository name
+    # Case 1: script was started in a directory that is a git repo
+    if rep == os.path.abspath(os.getcwd()):
+        (head, tail) = os.path.split(rep)
+        if tail != '':
+            return tail
+    # Case 2: script was started in a directory with possible subdirs that contain git repos
+    elif rep.find(os.path.abspath(os.getcwd())) == 0:
+        return rep[len(os.path.abspath(os.getcwd())) + 1:]
+    # Case 3: script was started with -d and above cases do not apply
+    else:
+        return rep
 
 # Search all local repositories from current directory
 def searchRepositories():
@@ -150,22 +167,7 @@ def checkRepository(rep, branch):
                     count
                 )
     if ischange or not argopts.get('quiet', False):
-        # Remove trailing slash from repository/directory name
-        if rep[-1:] == '/':
-            rep = rep[:-1]
-
-        # Do some magic to not show the absolute path as repository name
-        # Case 1: script was started in a directory that is a git repo
-        if rep == os.path.abspath(os.getcwd()):
-            (head, tail) = os.path.split(rep)
-            if tail != '':
-                repname = tail
-        # Case 2: script was started in a directory with possible subdirs that contain git repos
-        elif rep.find(os.path.abspath(os.getcwd())) == 0:
-            repname = rep[len(os.path.abspath(os.getcwd())) + 1:]
-        # Case 3: script was started with -d and above cases do not apply
-        else:
-            repname = rep
+        repname = makeRepoNameRelative(rep)
 
         if ischange:
             prjname = "%s%s%s" % (colortheme['prjchanged'], repname, colortheme['default'])
