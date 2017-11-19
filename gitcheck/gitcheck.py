@@ -350,6 +350,17 @@ def gitExec(path, cmd):
     return output.decode('utf-8')
 
 
+def hookExec(hook, repo):
+    relative_name = makeRepoNameRelative(repo);
+
+    commandToExecute = "%s %s" % (argopts[hook], repo)
+    cmdargs = shlex.split(commandToExecute)
+    p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
+    output, errors = p.communicate()
+    if p.returncode and not argopts.get('quiet', False):
+        print('Failed running (%s) on repo %s' % (hook, relative_name))
+
+
 # Check all git repositories
 def gitcheck():
     showDebug("Global Vars: %s" % argopts)
@@ -368,13 +379,25 @@ def gitcheck():
 
     showDebug("Processing repositories... please wait.")
     for r in repo:
-        if (argopts.get('checkall', False)):
-            branch = getAllBranches(r)
-        else:
-            branch = getDefaultBranch(r)
-        for b in branch:
-            if checkRepository(r, b):
-                actionNeeded = True
+        hook_ran = False;
+
+        if argopts.get("pull-hook", False):
+            hookExec("pull-hook", r);
+            hook_ran = True;
+
+        if argopts.get("push-hook", False):
+            hookExec("push-hook", r);
+            hook_ran = True;
+
+        if not hook_ran:
+            if (argopts.get('checkall', False)):
+                branch = getAllBranches(r)
+            else:
+                branch = getDefaultBranch(r)
+            for b in branch:
+                if checkRepository(r, b):
+                    actionNeeded = True
+
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
 
