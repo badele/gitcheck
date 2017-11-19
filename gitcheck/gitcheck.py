@@ -68,6 +68,23 @@ def showDebug(mess, level='info'):
     if argopts.get('debugmod', False):
         print(mess)
 
+def makeRepoNameRelative(rep):
+    # Remove trailing slash from repository/directory name
+    if rep[-1:] == '/':
+        rep = rep[:-1]
+
+    # Do some magic to not show the absolute path as repository name
+    # Case 1: script was started in a directory that is a git repo
+    if rep == os.path.abspath(os.getcwd()):
+        (head, tail) = os.path.split(rep)
+        if tail != '':
+            return tail
+    # Case 2: script was started in a directory with possible subdirs that contain git repos
+    elif rep.find(os.path.abspath(os.getcwd())) == 0:
+        return rep[len(os.path.abspath(os.getcwd())) + 1:]
+    # Case 3: script was started with -d and above cases do not apply
+    else:
+        return rep
 
 # Search all local repositories from current directory
 def searchRepositories():
@@ -150,22 +167,7 @@ def checkRepository(rep, branch):
                     count
                 )
     if ischange or not argopts.get('quiet', False):
-        # Remove trailing slash from repository/directory name
-        if rep[-1:] == '/':
-            rep = rep[:-1]
-
-        # Do some magic to not show the absolute path as repository name
-        # Case 1: script was started in a directory that is a git repo
-        if rep == os.path.abspath(os.getcwd()):
-            (head, tail) = os.path.split(rep)
-            if tail != '':
-                repname = tail
-        # Case 2: script was started in a directory with possible subdirs that contain git repos
-        elif rep.find(os.path.abspath(os.getcwd())) == 0:
-            repname = rep[len(os.path.abspath(os.getcwd())) + 1:]
-        # Case 3: script was started with -d and above cases do not apply
-        else:
-            repname = rep
+        repname = makeRepoNameRelative(rep)
 
         if ischange:
             prjname = "%s%s%s" % (colortheme['prjchanged'], repname, colortheme['default'])
@@ -348,6 +350,17 @@ def gitExec(path, cmd):
     return output.decode('utf-8')
 
 
+def hookExec(hook, repo):
+    relative_name = makeRepoNameRelative(repo);
+
+    commandToExecute = "%s %s" % (argopts[hook], repo)
+    cmdargs = shlex.split(commandToExecute)
+    p = subprocess.Popen(cmdargs, stdout=PIPE, stderr=PIPE)
+    output, errors = p.communicate()
+    if p.returncode and not argopts.get('quiet', False):
+        print('Failed running (%s) on repo %s' % (hook, relative_name))
+
+
 # Check all git repositories
 def gitcheck():
     showDebug("Global Vars: %s" % argopts)
@@ -366,13 +379,25 @@ def gitcheck():
 
     showDebug("Processing repositories... please wait.")
     for r in repo:
-        if (argopts.get('checkall', False)):
-            branch = getAllBranches(r)
-        else:
-            branch = getDefaultBranch(r)
-        for b in branch:
-            if checkRepository(r, b):
-                actionNeeded = True
+        hook_ran = False;
+
+        if argopts.get("pull-hook", False):
+            hookExec("pull-hook", r);
+            hook_ran = True;
+
+        if argopts.get("push-hook", False):
+            hookExec("push-hook", r);
+            hook_ran = True;
+
+        if not hook_ran:
+            if (argopts.get('checkall', False)):
+                branch = getAllBranches(r)
+            else:
+                branch = getDefaultBranch(r)
+            for b in branch:
+                if checkRepository(r, b):
+                    actionNeeded = True
+
     html.timestamp = strftime("%Y-%m-%d %H:%M:%S")
     html.msg += "</ul>\n<p>Report created on %s</p>\n" % html.timestamp
 
@@ -445,6 +470,16 @@ def readDefaultConfig():
         pass
 
 
+def checkHooks():
+    if "push-hook" in argopts and not os.path.isfile(argopts["push-hook"]):
+        print("push-hook isn't a valid file: %s" % argopts["push-hook"])
+        argopts["push-hook"] = None;
+
+    if "pull-hook" in argopts and not os.path.isfile(argopts["pull-hook"]):
+        print("pull-hook isn't a valid file: %s" % argopts["pull-hook"])
+        argopts["pull-hook"] = None;
+
+
 def usage():
     print("Usage: %s [OPTIONS]" % (sys.argv[0]))
     print("Check multiple git repository in one pass")
@@ -472,7 +507,8 @@ def main():
             "vhrubw:i:d:m:q:e:al:",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
-                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
+                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore=",
+                "push-hook=", "pull-hook="
             ]
         )
     except getopt.GetoptError as e:
@@ -527,12 +563,17 @@ def main():
         elif opt in ["-h", "--help"]:
             usage()
             sys.exit(0)
+        elif opt in ["--push-hook"]:
+            argopts["push-hook"] = arg
+        elif opt in ["--pull-hook"]:
+            argopts["pull-hook"] = arg
 #        else:
 #            print "Unhandled option %s" % opt
 #            sys.exit(2)
 
     while True:
         try:
+            checkHooks()
             gitcheck()
 
             if argopts.get('email', False):
