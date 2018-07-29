@@ -370,6 +370,8 @@ def gitcheck():
             branch = getAllBranches(r)
         else:
             branch = getDefaultBranch(r)
+        if not branch:
+            branch = ['master']
         for b in branch:
             if checkRepository(r, b):
                 actionNeeded = True
