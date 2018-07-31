@@ -257,6 +257,7 @@ def checkRepository(rep, branch):
                             if not argopts.get('email', False): print(pcommit)
                         html.msg += '</ul>\n'
 
+    print("\033[0m", end="") ## Reset the terminal colors the original ones.
     return actionNeeded
 
 
