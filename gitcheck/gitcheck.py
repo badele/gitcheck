@@ -25,7 +25,7 @@ from colored import fg, bg, attr
 # Global vars
 argopts = {}
 colortheme = None
-#Load custom parameters from ~/mygitcheck.py
+# Load custom parameters from ~/mygitcheck.py
 configfile = expanduser('~/mygitcheck.py')
 if os.path.exists(configfile):
     sys.path.append(expanduser('~'))
@@ -257,13 +257,13 @@ def checkRepository(rep, branch):
                             if not argopts.get('email', False): print(pcommit)
                         html.msg += '</ul>\n'
 
-    print("\033[0m", end="") ## Reset the terminal colors the original ones.
+    print("\033[0m", end="")    # Reset the terminal colors the original ones.
     return actionNeeded
 
 
 def getLocalFilesChange(rep):
     files = []
-    #curdir = os.path.abspath(os.getcwd())
+    # curdir = os.path.abspath(os.getcwd())
     snbchange = re.compile(r'^(.{2}) (.*)')
     onlyTrackedArg = "" if argopts.get('checkUntracked', False) else "uno"
     result = gitExec(rep, "status -s" + onlyTrackedArg)
