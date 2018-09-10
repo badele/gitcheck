@@ -24,7 +24,8 @@ def setUpModule():
     get_github_projects("gitcheck", "https://github.com/badele/gitcheck.git")
     get_github_projects("serialkiller", "https://github.com/badele/serialkiller.git")
     get_github_projects("fabrecipes", "https://github.com/badele/fabrecipes.git")
-
+    # Create empty repository
+    git.Git().init('%s/%s' % (GITROOT, 'zempty'))
 
 def get_github_projects(projectname, projecturl):
     # Preparing the git directory
@@ -61,6 +62,7 @@ class TestPackages(unittest.TestCase):
         self.assertEqual(repos[0], '%s/fabrecipes' % GITROOT)
         self.assertEqual(repos[1], '%s/gitcheck' % GITROOT)
         self.assertEqual(repos[2], '%s/serialkiller' % GITROOT)
+        self.assertEqual(repos[3], '%s/zempty' % GITROOT)
 
     def test_gitcheck(self):
         os.chdir(GITROOT)
@@ -89,7 +91,8 @@ class TestPackages(unittest.TestCase):
 
         self.assertEqual(lines[0], 'fabrecipes/master ')
         self.assertEqual(lines[1], 'gitcheck/master ')
-        self.assertEqual(lines[2], 'serialkiller/master')
+        self.assertEqual(lines[2], 'serialkiller/master ')
+        self.assertEqual(lines[3], 'zempty/master')
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
