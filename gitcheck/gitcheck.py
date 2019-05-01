@@ -103,8 +103,13 @@ def checkRepository(rep, branch):
     if re.match(argopts.get('ignoreBranch', r'^$'), branch):
         return False
 
+    # Local changes include changes to commit and stashed changes
     changes = getLocalFilesChange(rep)
-    ischange = len(changes) > 0
+    islocal = len(changes) > 0
+    if argopts.get('showStash', False):
+        islocal = islocal or len(getStashed(rep)) > 0
+
+    ischange = islocal  # initialize ischange with local changes, update later
     actionNeeded = False  # actionNeeded is branch push/pull, not local file change.
 
     topush = ""
@@ -178,18 +183,40 @@ def checkRepository(rep, branch):
             html.prjname = '<b style="color:green">%s</b>' % (repname)
 
         # Print result
-        if len(changes) > 0:
+        if islocal:
             strlocal = "%sLocal%s[" % (colortheme['reponame'], colortheme['default'])
-            lenFilesChnaged = len(getLocalFilesChange(rep))
-            strlocal += "%sTo Commit:%s%s" % (
-                colortheme['remoteto'],
-                colortheme['default'],
-                lenFilesChnaged
-            )
             html.strlocal = '<b style="color:orange"> Local</b><b style="color:black">['
-            html.strlocal += "To Commit:%s" % (
-                lenFilesChnaged
-            )
+
+            # Show local changes (to commit)
+            lenFilesChanged = len(getLocalFilesChange(rep))
+            if lenFilesChanged:
+                strlocal += "%sTo Commit:%s%s" % (
+                    colortheme['remoteto'],
+                    colortheme['default'],
+                    lenFilesChanged
+                )
+                html.strlocal += "To Commit:%s" % (
+                    lenFilesChanged
+                )
+
+            # Show stashed changes if requested
+            if argopts.get('showStash', False):
+                lenStashed = len(getStashed(rep))
+                if lenStashed:
+                    # include a space to separate changes to commit and stashed changes
+                    separator = ''
+                    if lenFilesChanged:
+                        separator = ' '
+
+                    strlocal += separator + "%sStashed:%s%s" % (
+                        colortheme['remoteto'],
+                        colortheme['default'],
+                        lenStashed
+                    )
+                    html.strlocal += separator + "Stashed:%s" % (
+                        lenStashed
+                    )
+
             strlocal += "]"
             html.strlocal += "]</b>"
         else:
@@ -204,7 +231,7 @@ def checkRepository(rep, branch):
             print("%(prjname)s/%(cbranch)s %(strlocal)s%(topush)s%(topull)s" % locals())
 
         if argopts.get('verbose', False):
-            if ischange > 0:
+            if len(changes) > 0:
                 filename = "  |--Local"
                 if not argopts.get('email', False):
                     print(filename)
@@ -219,6 +246,26 @@ def checkRepository(rep, branch):
                     html.msg += '<li> <b style="color:orange">[To Commit] </b>%s</li>\n' % c[1]
                     if not argopts.get('email', False): print(filename)
                 html.msg += '</ul>\n'
+            # stashed
+            if argopts.get('showStash', False):
+                stashed = getStashed(rep)
+                if len(stashed):
+                    if not argopts.get('email', False):
+                        print("  |--Stashed")
+                    html.msg += '<ul><li><b>Stashed</b></li></ul>\n<ul>\n'
+                    for num, s in enumerate(stashed):
+                        stashstr = "     |-- %s%s%s %s %s" % (
+                            colortheme['commitstate'],
+                            num,
+                            colortheme['default'],
+                            s[0],
+                            s[2])
+                        if not argopts.get('email', False): print(stashstr)
+                        html.msg += '<li> <b style="color:orange">[Stashed] </b>%s %s %s</li>\n' % (
+                            num,
+                            s[0],
+                            s[2])
+                    html.msg += '</ul>\n'
             if branch != "":
                 remotes = getRemoteRepositories(rep)
                 for r in remotes:
@@ -298,6 +345,15 @@ def getRemoteToPull(rep, remote, branch):
                      % locals())
 
     return [x for x in result.split('\n') if x]
+
+
+def getStashed(rep):
+    result = gitExec(rep, "stash list --oneline")
+
+    # split the commit and ref off the message
+    split_lines = [x.split(' ', 2) for x in result.split('\n') if x]
+
+    return split_lines
 
 
 def updateRemote(rep):
@@ -462,6 +518,7 @@ def usage():
     print("  -e, --email                          Send an email with result as html, using mail.properties parameters")
     print("  -a, --all-branch                     Show the status of all branches")
     print("  -l <re>, --localignore=<re>          ignore changes in local files which match the regex <re>")
+    print("  -s, --stash                          Show number of stashed changes")
     print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
 
 
@@ -469,10 +526,11 @@ def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrubw:i:d:m:q:e:al:",
+            "vhrubw:i:d:m:q:e:al:s",
             [
                 "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
-                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
+                "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore=",
+                "stash"
             ]
         )
     except getopt.GetoptError as e:
@@ -521,6 +579,8 @@ def main():
             argopts['email'] = True
         elif opt in ["-a", "--all-branch"]:
             argopts['checkall'] = True
+        elif opt in ["-s", "--stash"]:
+            argopts['showStash'] = True
         elif opt in ["--init-email"]:
             initEmailConfig()
             sys.exit(0)
