@@ -109,7 +109,7 @@ def checkRepository(rep, branch):
     if argopts.get('showStash', False):
         islocal = islocal or len(getStashed(rep)) > 0
 
-    ischange = islocal # initialize ischange with local changes, update later
+    ischange = islocal  # initialize ischange with local changes, update later
     actionNeeded = False  # actionNeeded is branch push/pull, not local file change.
 
     topush = ""
@@ -255,16 +255,16 @@ def checkRepository(rep, branch):
                     html.msg += '<ul><li><b>Stashed</b></li></ul>\n<ul>\n'
                     for num, s in enumerate(stashed):
                         stashstr = "     |-- %s%s%s %s %s" % (
-                                colortheme['commitstate'],
-                                num,
-                                colortheme['default'],
-                                s[0],
-                                s[2])
+                            colortheme['commitstate'],
+                            num,
+                            colortheme['default'],
+                            s[0],
+                            s[2])
                         if not argopts.get('email', False): print(stashstr)
                         html.msg += '<li> <b style="color:orange">[Stashed] </b>%s %s %s</li>\n' % (
-                                num,
-                                s[0],
-                                s[2])
+                            num,
+                            s[0],
+                            s[2])
                     html.msg += '</ul>\n'
             if branch != "":
                 remotes = getRemoteRepositories(rep)
