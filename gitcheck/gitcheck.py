@@ -82,12 +82,15 @@ def searchRepositories():
         html.path = curdir
         startinglevel = curdir.count(os.sep)
 
-        for directory, dirnames, filenames in os.walk(curdir):
+        for directory, dirnames, filenames in os.walk(curdir, topdown=True):
             level = directory.count(os.sep) - startinglevel
-            if argopts.get('depth', None) is None or level <= argopts.get('depth', None):
-                if '.git' in dirnames:
-                    showDebug("  Add %s repository" % directory)
-                    repo.add(directory)
+
+            if '.git' in dirnames:
+                showDebug("  Add %s repository" % directory)
+                repo.add(directory)
+
+            if argopts.get('depth', None) is not None and level >= argopts.get('depth', None):
+                dirnames[:] = []
 
     showDebug('Done')
     return sorted(repo)
