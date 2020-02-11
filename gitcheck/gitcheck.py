@@ -62,6 +62,7 @@ class html:
     prjname = ""
     path = ""
     timestamp = ""
+    commit = ""
 
 
 def showDebug(mess, level='info'):
@@ -109,9 +110,11 @@ def checkRepository(rep, branch):
 
     topush = ""
     topull = ""
+    commit = ""
     html.topush = ""
     html.topull = ""
     if branch != "":
+
         remotes = getRemoteRepositories(rep)
         hasremotes = bool(remotes)
         for r in remotes:
@@ -167,6 +170,16 @@ def checkRepository(rep, branch):
         else:
             repname = rep
 
+        # @Xuning: print commit hash if asked
+        if argopts.get('commit', False):
+            gitCommit = getLatestShortCommit(rep)
+            html.commit = '(%s)' % (gitCommit)
+            commit = "(%s)" % (gitCommit)
+        elif argopts.get('Commit', False):
+            gitCommit = getLatestCommit(rep)
+            html.commit = '(%s)' % (gitCommit)
+            commit = "(%s)" % (gitCommit)
+
         if ischange:
             prjname = "%s%s%s" % (colortheme['prjchanged'], repname, colortheme['default'])
             html.prjname = '<b style="color:red">%s</b>' % (repname)
@@ -201,7 +214,9 @@ def checkRepository(rep, branch):
 
         else:
             cbranch = "%s%s" % (colortheme['branchname'], branch)
-            print("%(prjname)s/%(cbranch)s %(strlocal)s%(topush)s%(topull)s" % locals())
+            print("%(prjname)s/%(cbranch)s %(commit)s %(strlocal)s%(topush)s%(topull)s" % locals())
+
+
 
         if argopts.get('verbose', False):
             if ischange > 0:
@@ -327,6 +342,16 @@ def getAllBranches(rep):
 
     return [b[2:] for b in branch]
 
+# @Xuning: Get latest commit for repository on the branch
+def getLatestShortCommit(rep):
+    gitCommit = gitExec(rep, "rev-parse --short HEAD"
+                        % locals())
+    return gitCommit.strip()
+
+def getLatestCommit(rep):
+    gitCommit = gitExec(rep, "rev-parse HEAD"
+                        % locals())
+    return gitCommit.strip()
 
 def getRemoteRepositories(rep):
     result = gitExec(rep, "remote"
@@ -346,7 +371,6 @@ def gitExec(path, cmd):
         print('Failed running %s' % commandToExecute)
         raise Exception(errors)
     return output.decode('utf-8')
-
 
 # Check all git repositories
 def gitcheck():
@@ -463,15 +487,17 @@ def usage():
     print("  -a, --all-branch                     Show the status of all branches")
     print("  -l <re>, --localignore=<re>          ignore changes in local files which match the regex <re>")
     print("  --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)")
+    print("  -c --commit                          Show short commit hash (git rev-parse --short HEAD) ")
+    print("  -C --Commit                          Show long commit hash (git rev-parse HEAD) ")
 
 
 def main():
     try:
         opts, args = getopt.getopt(
             sys.argv[1:],
-            "vhrubw:i:d:m:q:e:al:",
+            "vhrubcCw:i:d:m:q:e:al:",
             [
-                "verbose", "debug", "help", "remote", "untracked", "bell", "watch=", "ignore-branch=",
+                "verbose", "debug", "help", "remote", "untracked", "bell", "commit", "Commit", "watch=", "ignore-branch=",
                 "dir=", "maxdepth=", "quiet", "email", "init-email", "all-branch", "localignore="
             ]
         )
@@ -521,6 +547,10 @@ def main():
             argopts['email'] = True
         elif opt in ["-a", "--all-branch"]:
             argopts['checkall'] = True
+        elif opt in ["-c", "--commit"]:
+            argopts['commit'] = True
+        elif opt in ["-C", "--Commit"]:
+            argopts['Commit'] = True
         elif opt in ["--init-email"]:
             initEmailConfig()
             sys.exit(0)
