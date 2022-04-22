@@ -20,7 +20,7 @@ Installation
 
 ::
 
-    pip install git+git://github.com/badele/gitcheck.git
+    pip install git+https://github.com/badele/gitcheck.git
 
 
 Examples
