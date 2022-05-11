@@ -112,6 +112,9 @@ Options
     -q, --quiet                          Display info only when repository needs action
     -e, --email                          Send an email with result as html, using mail.properties parameters
     --init-email                         Initialize mail.properties file (has to be modified by user using JSON Format)
+    -c --commit                          Show short commit hash (git rev-parse --short HEAD)
+    -C --Commit                          Show long commit hash (git rev-parse HEAD) 
+
 
 French version
 ~~~~~~~~~~~~~~
